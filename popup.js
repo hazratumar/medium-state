@@ -20,9 +20,25 @@ class MediumStatsExtension {
 
   init() {
     this.elements.callButton.addEventListener("click", () => this.handleApiCall());
+    this.initTabs();
     this.checkMediumPage();
     this.loadChartData();
     this.handleApiCall();
+  }
+
+  initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => this.switchTab(button.dataset.tab));
+    });
+  }
+
+  switchTab(tabName) {
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+    
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(tabName).classList.add('active');
   }
 
   async checkMediumPage() {
