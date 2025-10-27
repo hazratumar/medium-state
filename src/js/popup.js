@@ -10,7 +10,6 @@ class MediumStatsExtension {
       status: document.getElementById("status"),
       table: document.getElementById("table"),
       chart: document.getElementById("chart"),
-      callButton: document.getElementById("call"),
       first: document.getElementById("first"),
       after: document.getElementById("after"),
       orderBy: document.getElementById("orderBy"),
@@ -19,7 +18,7 @@ class MediumStatsExtension {
   }
 
   init() {
-    this.elements.callButton.addEventListener("click", () => this.handleApiCall());
+    this.elements.orderBy.addEventListener("change", () => this.handleApiCall());
     this.initTabs();
     this.checkMediumPage();
     this.loadChartData();
@@ -46,7 +45,7 @@ class MediumStatsExtension {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab.url.includes("medium.com")) {
         this.showStatus("Please navigate to Medium.com first", "error");
-        this.elements.callButton.disabled = true;
+        this.elements.orderBy.disabled = true;
       }
     } catch (error) {
       this.showStatus("Unable to check current page", "error");
@@ -63,10 +62,9 @@ class MediumStatsExtension {
   }
 
   setLoadingState(loading) {
-    this.elements.callButton.textContent = loading ? "Loading..." : "Load Stats";
-    this.elements.callButton.disabled = loading;
+    this.elements.orderBy.disabled = loading;
     if (loading) {
-      this.showStatus("Fetching your Medium stats...", "loading");
+      this.showStatus("Fetching your Medium statistics...", "loading");
     }
   }
 
@@ -74,6 +72,13 @@ class MediumStatsExtension {
     this.elements.status.textContent = message;
     this.elements.status.className = `status ${type}`;
     this.elements.status.style.display = message ? "block" : "none";
+    
+    // Auto-hide success messages after 3 seconds
+    if (type === "success" && message) {
+      setTimeout(() => {
+        this.elements.status.style.display = "none";
+      }, 3000);
+    }
   }
 
   formatEarnings(earnings) {
@@ -114,7 +119,18 @@ class MediumStatsExtension {
 
   renderChart(posts) {
     const dailyEarnings = this.aggregateDailyEarnings(posts);
-    if (dailyEarnings.length === 0) return;
+    if (dailyEarnings.length === 0) {
+      const canvas = this.elements.chart;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#f3f4f6";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "14px Inter";
+      ctx.textAlign = "center";
+      ctx.fillText("No earnings data available", canvas.width / 2, canvas.height / 2);
+      return;
+    }
 
     const canvas = this.elements.chart;
     const ctx = canvas.getContext("2d");
@@ -123,26 +139,58 @@ class MediumStatsExtension {
     const chartWidth = width - padding * 2;
     const chartHeight = height - padding * 2;
 
+    // Clear and set background
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#f8f9fa";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    const maxEarnings = Math.max(...dailyEarnings.map((d) => d.earnings));
+    const maxEarnings = Math.max(...dailyEarnings.map((d) => d.earnings), 1);
     const barWidth = chartWidth / dailyEarnings.length;
 
+    // Draw grid lines
+    ctx.strokeStyle = "#f3f4f6";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padding + (chartHeight / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
+
+    // Draw bars with gradient
     dailyEarnings.forEach((day, i) => {
-      const barHeight = (day.earnings / maxEarnings) * chartHeight;
+      const barHeight = Math.max((day.earnings / maxEarnings) * chartHeight, 2);
       const x = padding + i * barWidth;
       const y = height - padding - barHeight;
 
-      ctx.fillStyle = "#007bff";
-      ctx.fillRect(x + 2, y, barWidth - 4, barHeight);
+      // Create gradient
+      const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+      gradient.addColorStop(0, "#667eea");
+      gradient.addColorStop(1, "#764ba2");
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x + 4, y, barWidth - 8, barHeight);
 
-      ctx.fillStyle = "#333";
-      ctx.font = "10px Arial";
+      // Add rounded corners effect
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(x + 4, y, barWidth - 8, Math.min(barHeight, 6), 3);
+      ctx.fill();
+
+      // Date labels
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "10px Inter";
       ctx.textAlign = "center";
-      ctx.fillText(day.date, x + barWidth / 2, height - 5);
-      ctx.fillText(`$${day.earnings.toFixed(2)}`, x + barWidth / 2, y - 5);
+      const shortDate = new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      ctx.fillText(shortDate, x + barWidth / 2, height - 8);
+      
+      // Value labels (only if bar is tall enough)
+      if (barHeight > 20) {
+        ctx.fillStyle = "#374151";
+        ctx.font = "bold 10px Inter";
+        ctx.fillText(`$${day.earnings.toFixed(2)}`, x + barWidth / 2, y - 8);
+      }
     });
 
     canvas.style.display = "block";
@@ -210,8 +258,11 @@ class MediumStatsExtension {
     if (!posts || posts.length === 0) {
       this.elements.table.innerHTML = `
         <div class="empty-state">
-          <h3>No posts found</h3>
-          <p>Try adjusting your filters or check if you have published posts on Medium.</p>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="margin-bottom: 16px; opacity: 0.5;">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <h3>No articles found</h3>
+          <p>Try adjusting your filters or check if you have published articles on Medium.</p>
         </div>`;
       return;
     }
@@ -220,13 +271,14 @@ class MediumStatsExtension {
     const sortedPosts = [...posts].sort((a, b) => (b.node.totalStats?.views || 0) - (a.node.totalStats?.views || 0));
 
     const rows = sortedPosts
-      .map((post) => {
+      .map((post, index) => {
         const { title, totalStats, earnings } = post.node;
+        const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
         return `
-        <tr>
+        <tr style="animation: fadeIn 0.3s ease ${index * 0.05}s both;">
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
           <td class="number">${this.formatNumber(totalStats?.views)}</td>
-          <td class="number">${this.formatNumber(totalStats?.reads)}</td>
+          <td class="number">${this.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
           <td class="number">${this.formatEarnings(earnings)}</td>
         </tr>`;
       })
@@ -241,25 +293,37 @@ class MediumStatsExtension {
           <option value="earnings">Sort by Earnings</option>
           <option value="title">Sort by Title</option>
         </select>
-        <input type="text" id="searchTable" placeholder="Search posts..." 
+        <input type="text" id="searchTable" placeholder="🔍 Search articles..." 
                oninput="window.extensionInstance.filterTable(this.value)">
       </div>
-      <table class="table" id="dataTable">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Views</th>
-            <th>Reads</th>
-            <th>Earnings</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>`;
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Article Title</th>
+              <th>Views</th>
+              <th>Reads (Rate)</th>
+              <th>Earnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>`;
 
     this.currentPosts = posts;
     window.extensionInstance = this;
+    
+    // Add CSS animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   escapeHtml(text) {
