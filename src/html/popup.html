@@ -47,39 +47,13 @@
     </div>
 
     <div class="tab-content">
-      <div id="stats" class="tab-panel active">
-        <label>Order By:</label>
-        <select id="orderBy">
-          <option value="latest-desc">Latest</option>
-          <option value="oldest-asc">Oldest</option>
-          <option value="views-desc">Most Viewed</option>
-          <option value="views-asc">Least Viewed</option>
-          <option value="reads-desc">Most Read</option>
-          <option value="reads-asc">Least Read</option>
-          <option value="earnings-desc">Most Earnings</option>
-          <option value="earnings-asc">Least Earnings</option>
-        </select>
-        <div id="status"></div>
-        <div id="table"></div>
-      </div>
-
-      <div id="analytics" class="tab-panel">
-        <canvas id="chart" width="480" height="200" style="border: 1px solid #ddd; margin: 10px 0;"></canvas>
-        <div id="analytics-summary"></div>
-      </div>
-
-      <div id="settings" class="tab-panel">
-        <label>Articles to fetch:</label>
-        <input id="first" type="number" value="10" min="1" max="1000" />
-        <label>After cursor:</label>
-        <input id="after" placeholder="Leave empty for first page" />
-        <label>Filter:</label>
-        <select id="filter">
-          <option value="true">Published Only</option>
-          <option value="false">All Posts</option>
-        </select>
-      </div>
+      <div id="stats" class="tab-panel active"></div>
+      <div id="analytics" class="tab-panel"></div>
+      <div id="settings" class="tab-panel"></div>
     </div>
+    <script src="../js/tabs/StatsTab.js"></script>
+    <script src="../js/tabs/AnalyticsTab.js"></script>
+    <script src="../js/tabs/SettingsTab.js"></script>
     <script src="../js/popup.js"></script>
   </body>
 </html>

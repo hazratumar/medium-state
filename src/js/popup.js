@@ -2,6 +2,11 @@ class MediumStatsExtension {
   constructor() {
     this.elements = this.getElements();
     this.isAdvancedVisible = false;
+    this.tabs = {
+      stats: new StatsTab(this),
+      analytics: new AnalyticsTab(this),
+      settings: new SettingsTab(this)
+    };
     this.init();
   }
 
@@ -18,10 +23,10 @@ class MediumStatsExtension {
   }
 
   init() {
-    this.elements.orderBy.addEventListener("change", () => this.handleApiCall());
     this.initTabs();
     this.checkMediumPage();
-    this.loadChartData();
+    // Initialize first tab
+    this.switchTab('stats');
     this.handleApiCall();
   }
 
@@ -37,7 +42,14 @@ class MediumStatsExtension {
     document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
     
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.getElementById(tabName).classList.add('active');
+    const panel = document.getElementById(tabName);
+    panel.classList.add('active');
+    
+    // Render tab content
+    if (this.tabs[tabName]) {
+      panel.innerHTML = this.tabs[tabName].render();
+      this.tabs[tabName].init();
+    }
   }
 
   async checkMediumPage() {
