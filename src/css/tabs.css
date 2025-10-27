@@ -1,0 +1,280 @@
+/* Tab Container Styles */
+.bulk-actions-container {
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Inner Tabs Navigation */
+.inner-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 0.5rem;
+}
+
+.inner-tab-button {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.inner-tab-button:hover {
+  color: #374151;
+  background: #f9fafb;
+}
+
+.inner-tab-button.active {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.inner-tab-button.active::after {
+  content: "";
+  position: absolute;
+  bottom: -0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #2563eb;
+  transform-origin: left;
+  animation: tabIndicator 0.2s ease forwards;
+}
+
+/* Table Styles */
+.table-container {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#followingTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+}
+
+#followingTable th {
+  background: #f8fafc;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 500;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+#followingTable td {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+#followingTable tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Unfollow Button States */
+.unfollow-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: #ef4444;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.unfollow-button:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.unfollow-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.unfollow-button.unfollowing {
+  background: #9ca3af;
+  padding-left: 2.5rem;
+}
+
+.unfollow-button.unfollowing::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid white;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.unfollow-button.unfollowed {
+  background: #10b981;
+  transform: scale(0.95);
+}
+
+/* Progress Bar Styles */
+.progress-container {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: slideIn 0.3s ease forwards;
+}
+
+.progress-container.completed {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2563eb;
+  transition: width 0.3s ease;
+}
+
+.progress-details {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tabIndicator {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Row Removal Animation */
+tr.removing-row {
+  animation: removeRow 0.5s ease forwards;
+}
+
+@keyframes removeRow {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Summary Stats */
+.following-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.stat-card {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.bulk-controls {
+  display: flex;
+  gap: 1rem;
+}
+
+#unfollowAllBtn {
+  padding: 0.75rem 1.5rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+#unfollowAllBtn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+#unfollowAllBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}

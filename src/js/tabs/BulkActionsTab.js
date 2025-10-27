@@ -460,6 +460,7 @@ class BulkActionsTab {
 
     try {
       button.disabled = true;
+      button.classList.add("unfollowing");
       button.textContent = "Unfollowing...";
 
       const response = await fetch("https://medium.com/_/graphql", {
@@ -472,19 +473,32 @@ class BulkActionsTab {
 
       const data = await response.json();
       if (data[0]?.data?.unfollowUser) {
+        button.classList.remove("unfollowing");
+        button.classList.add("unfollowed");
         button.textContent = "Unfollowed";
-        button.style.backgroundColor = "#10b981";
-        setTimeout(() => {
-          button.closest("tr").remove();
-        }, 1000);
+
+        const row = button.closest("tr");
+        row.classList.add("removing-row");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        row.remove();
       } else {
         throw new Error("Unfollow failed");
       }
     } catch (error) {
       console.error("Error unfollowing user:", error);
       button.disabled = false;
+      button.classList.remove("unfollowing");
       button.textContent = "Unfollow";
-      alert("Failed to unfollow user. Please try again.");
+
+      // Show error toast instead of alert
+      const toast = document.createElement("div");
+      toast.className = "error-toast";
+      toast.textContent = "Failed to unfollow user. Please try again.";
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
     }
   }
 
