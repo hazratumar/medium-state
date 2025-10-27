@@ -1,13 +1,17 @@
 class MediumStatsExtension {
   constructor() {
-    this.elements = this.getElements();
     this.isAdvancedVisible = false;
     this.tabs = {
       stats: new StatsTab(this),
       analytics: new AnalyticsTab(this),
-      settings: new SettingsTab(this)
+      settings: new SettingsTab(this),
     };
-    this.init();
+    // Wait for DOM to be ready before initializing
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => this.init());
+    } else {
+      this.init();
+    }
   }
 
   getElements() {
@@ -23,28 +27,33 @@ class MediumStatsExtension {
   }
 
   init() {
+    this.elements = this.getElements();
     this.initTabs();
-    this.checkMediumPage();
-    // Initialize first tab
-    this.switchTab('stats');
-    this.handleApiCall();
+    // Make the API call immediately when popup opens
+    this.checkMediumPage().then(() => {
+      // Initialize first tab
+      this.switchTab("stats");
+      this.handleApiCall();
+      // Load chart data as well
+      this.loadChartData();
+    });
   }
 
   initTabs() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    tabButtons.forEach(button => {
-      button.addEventListener('click', () => this.switchTab(button.dataset.tab));
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => this.switchTab(button.dataset.tab));
     });
   }
 
   switchTab(tabName) {
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-    
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.querySelectorAll(".tab-button").forEach((btn) => btn.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.remove("active"));
+
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add("active");
     const panel = document.getElementById(tabName);
-    panel.classList.add('active');
-    
+    panel.classList.add("active");
+
     // Render tab content
     if (this.tabs[tabName]) {
       panel.innerHTML = this.tabs[tabName].render();
@@ -57,39 +66,80 @@ class MediumStatsExtension {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab.url.includes("medium.com")) {
         this.showStatus("Please navigate to Medium.com first", "error");
-        this.elements.orderBy.disabled = true;
+        if (this.elements.orderBy) {
+          this.elements.orderBy.disabled = true;
+        }
+        return false;
       }
+      return true;
     } catch (error) {
       this.showStatus("Unable to check current page", "error");
+      return false;
     }
   }
 
   getParams() {
+    // Use default values if elements are not yet available
     return {
-      first: Math.min(parseInt(this.elements.first.value) || 50, 1000),
-      after: this.elements.after.value.trim(),
-      orderBy: this.elements.orderBy.value,
-      filter: this.elements.filter.value === "true",
+      first: 1000, // Default to 50 posts
+      after: "", // Start from beginning
+      orderBy: "latest-desc", // Default to latest posts
+      filter: true, // Show published posts only
     };
   }
 
   setLoadingState(loading) {
-    this.elements.orderBy.disabled = loading;
-    if (loading) {
-      this.showStatus("Fetching your Medium statistics...", "loading");
+    // Disable sort control if present
+    const orderBy = document.getElementById("orderBy");
+    if (orderBy) orderBy.disabled = loading;
+
+    // Show status (CSS will show spinner when type is 'loading')
+    this.showStatus(loading ? "Fetching your Medium statistics..." : "", loading ? "loading" : "");
+
+    // Show a skeleton loader in the table while loading
+    const table = document.getElementById("table");
+    if (table) {
+      if (loading) {
+        table.innerHTML = this.getSkeletonMarkup();
+      } else {
+        // Remove skeleton if still present; real data will replace it in renderTable
+        if (table.querySelector && table.querySelector(".skeleton-row")) {
+          table.innerHTML = "";
+        }
+      }
     }
   }
 
+  getSkeletonMarkup() {
+    const rows = Array.from({ length: 6 })
+      .map(
+        () => `
+          <div class="skeleton-row">
+            <div class="skeleton-cell small"></div>
+            <div class="skeleton-cell title"></div>
+            <div class="skeleton-cell small"></div>
+            <div class="skeleton-cell small"></div>
+            <div class="skeleton-cell small"></div>
+          </div>`
+      )
+      .join("");
+
+    return `<div class="skeleton-container">${rows}</div>`;
+  }
+
   showStatus(message, type = "success") {
-    this.elements.status.textContent = message;
-    this.elements.status.className = `status ${type}`;
-    this.elements.status.style.display = message ? "block" : "none";
-    
-    // Auto-hide success messages after 3 seconds
-    if (type === "success" && message) {
-      setTimeout(() => {
-        this.elements.status.style.display = "none";
-      }, 3000);
+    const status = document.getElementById("status");
+    if (status) {
+      status.textContent = message;
+      status.className = `status ${type}`;
+      status.style.display = message ? "block" : "none";
+
+      // Auto-hide success messages after 3 seconds
+      if (type === "success" && message) {
+        setTimeout(() => {
+          status.style.display = "none";
+        }, 3000);
+      }
     }
   }
 
@@ -132,7 +182,8 @@ class MediumStatsExtension {
   renderChart(posts) {
     const dailyEarnings = this.aggregateDailyEarnings(posts);
     if (dailyEarnings.length === 0) {
-      const canvas = this.elements.chart;
+      const canvas = document.getElementById("chart");
+      if (!canvas) return;
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#f3f4f6";
@@ -144,7 +195,8 @@ class MediumStatsExtension {
       return;
     }
 
-    const canvas = this.elements.chart;
+    const canvas = document.getElementById("chart");
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const { width, height } = canvas;
     const padding = 40;
@@ -180,7 +232,7 @@ class MediumStatsExtension {
       const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
       gradient.addColorStop(0, "#667eea");
       gradient.addColorStop(1, "#764ba2");
-      
+
       ctx.fillStyle = gradient;
       ctx.fillRect(x + 4, y, barWidth - 8, barHeight);
 
@@ -194,9 +246,9 @@ class MediumStatsExtension {
       ctx.fillStyle = "#6b7280";
       ctx.font = "10px Inter";
       ctx.textAlign = "center";
-      const shortDate = new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const shortDate = new Date(day.date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       ctx.fillText(shortDate, x + barWidth / 2, height - 8);
-      
+
       // Value labels (only if bar is tall enough)
       if (barHeight > 20) {
         ctx.fillStyle = "#374151";
@@ -256,19 +308,21 @@ class MediumStatsExtension {
           <div class="stat-label">Total Reads</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">$${totalEarnings.toFixed(2)}</div>
-          <div class="stat-label">Total Earnings</div>
-        </div>
-        <div class="stat-card">
           <div class="stat-value">${readRate}%</div>
           <div class="stat-label">Read Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">$${totalEarnings.toFixed(2)}</div>
+          <div class="stat-label">Total Earnings</div>
         </div>
       </div>`;
   }
 
   renderTable(posts) {
     if (!posts || posts.length === 0) {
-      this.elements.table.innerHTML = `
+      const table = document.getElementById("table");
+      if (table) {
+        table.innerHTML = `
         <div class="empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="margin-bottom: 16px; opacity: 0.5;">
             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
@@ -276,11 +330,12 @@ class MediumStatsExtension {
           <h3>No articles found</h3>
           <p>Try adjusting your filters or check if you have published articles on Medium.</p>
         </div>`;
+      }
       return;
     }
 
     const reportSummary = this.generateReport(posts);
-    const sortedPosts = [...posts].sort((a, b) => (b.node.totalStats?.views || 0) - (a.node.totalStats?.views || 0));
+    const sortedPosts = posts;
 
     const rows = sortedPosts
       .map((post, index) => {
@@ -288,6 +343,7 @@ class MediumStatsExtension {
         const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
         return `
         <tr style="animation: fadeIn 0.3s ease ${index * 0.05}s both;">
+          <td class="number">${index + 1}</td>
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
           <td class="number">${this.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
@@ -296,22 +352,25 @@ class MediumStatsExtension {
       })
       .join("");
 
-    this.elements.table.innerHTML = `
+    let table = document.getElementById("table");
+    // Defensive: if #table is missing (render timing), create it inside the active panel
+    if (!table) {
+      const activePanel = document.querySelector(".tab-panel.active");
+      if (activePanel) {
+        // append a container if missing
+        activePanel.insertAdjacentHTML("beforeend", '<div id="table" class="table-container"></div>');
+      }
+      table = document.getElementById("table");
+    }
+
+    if (table) {
+      table.innerHTML = `
       ${reportSummary}
-      <div class="table-controls">
-        <select id="sortBy" onchange="window.extensionInstance.sortTable(this.value)">
-          <option value="views">Sort by Views</option>
-          <option value="reads">Sort by Reads</option>
-          <option value="earnings">Sort by Earnings</option>
-          <option value="title">Sort by Title</option>
-        </select>
-        <input type="text" id="searchTable" placeholder="🔍 Search articles..." 
-               oninput="window.extensionInstance.filterTable(this.value)">
-      </div>
       <div class="table-container">
         <table id="dataTable">
           <thead>
             <tr>
+              <th>S/N</th>
               <th>Article Title</th>
               <th>Views</th>
               <th>Reads (Rate)</th>
@@ -323,12 +382,13 @@ class MediumStatsExtension {
           </tbody>
         </table>
       </div>`;
+    }
 
     this.currentPosts = posts;
     window.extensionInstance = this;
-    
+
     // Add CSS animation
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
@@ -347,13 +407,29 @@ class MediumStatsExtension {
   sortTable(sortBy) {
     if (!this.currentPosts) return;
 
-    const sorted = [...this.currentPosts].sort((a, b) => {
-      const aVal =
-        sortBy === "title" ? a.node.title : sortBy === "earnings" ? this.getEarningsValue(a.node.earnings) : a.node.totalStats?.[sortBy] || 0;
-      const bVal =
-        sortBy === "title" ? b.node.title : sortBy === "earnings" ? this.getEarningsValue(b.node.earnings) : b.node.totalStats?.[sortBy] || 0;
+    const orderBy = document.getElementById("orderBy");
+    const sortValue = orderBy ? orderBy.value : "latest-desc";
+    const [field, direction] = sortValue.split("-");
+    const isAsc = direction === "asc";
 
-      return sortBy === "title" ? aVal.localeCompare(bVal) : bVal - aVal;
+    const sorted = [...this.currentPosts].sort((a, b) => {
+      let aVal, bVal;
+
+      if (field === "latest" || field === "oldest") {
+        aVal = new Date(a.node.firstPublishedAt).getTime();
+        bVal = new Date(b.node.firstPublishedAt).getTime();
+      } else if (field === "earnings") {
+        aVal = this.getEarningsValue(a.node.earnings);
+        bVal = this.getEarningsValue(b.node.earnings);
+      } else if (field === "rate") {
+        aVal = a.node.totalStats?.views > 0 ? (a.node.totalStats.reads / a.node.totalStats.views) * 100 : 0;
+        bVal = b.node.totalStats?.views > 0 ? (b.node.totalStats.reads / b.node.totalStats.views) * 100 : 0;
+      } else {
+        aVal = a.node.totalStats?.[field] || 0;
+        bVal = b.node.totalStats?.[field] || 0;
+      }
+
+      return isAsc ? aVal - bVal : bVal - aVal;
     });
 
     this.updateTableRows(sorted);
@@ -376,43 +452,39 @@ class MediumStatsExtension {
     if (!tbody) return;
 
     const rows = posts
-      .map((post) => {
+      .map((post, idx) => {
         const { title, totalStats, earnings } = post.node;
+        const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
         return `
         <tr>
+          <td class="number">${idx + 1}</td>
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
           <td class="number">${this.formatNumber(totalStats?.views)}</td>
-          <td class="number">${this.formatNumber(totalStats?.reads)}</td>
+          <td class="number">${this.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
           <td class="number">${this.formatEarnings(earnings)}</td>
         </tr>`;
       })
       .join("");
 
+    // update only tbody since header and controls exist
     tbody.innerHTML = rows;
   }
 
   handleResponse(response) {
-    if (chrome.runtime.lastError) {
-      this.showStatus(`Error: ${chrome.runtime.lastError.message}`, "error");
+    if (!response || response.error) {
+      this.showStatus(response?.error || "Failed to fetch data", "error");
       return;
     }
 
-    if (!response) {
-      this.showStatus("Failed to fetch data. Please try again.", "error");
-      return;
-    }
+    // Extract posts from the nested response structure
+    const posts = response?.data[0]?.data?.user?.postsConnection?.edges;
 
-    if (response.error) {
-      this.showStatus(`API Error: ${response.error}`, "error");
-      return;
-    }
-
-    if (response.data?.[0]?.data?.user?.postsConnection?.edges) {
-      const posts = response.data[0].data.user.postsConnection.edges;
-      this.showStatus(`Loaded ${posts.length} posts successfully`, "success");
+    if (posts && posts.length > 0) {
       this.renderTable(posts);
+      this.renderChart(posts);
+      this.showStatus("Data loaded successfully", "success");
     } else {
-      this.showStatus("No data received. Make sure you're logged into Medium.", "error");
+      this.showStatus("No data received", "error");
     }
   }
 

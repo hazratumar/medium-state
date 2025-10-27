@@ -15,6 +15,8 @@ class StatsTab {
             <option value="views-asc">Least Viewed</option>
             <option value="reads-desc">Most Read</option>
             <option value="reads-asc">Least Read</option>
+            <option value="rate-desc">Highest Read Rate</option>
+            <option value="rate-asc">Lowest Read Rate</option>
             <option value="earnings-desc">Highest Earnings</option>
             <option value="earnings-asc">Lowest Earnings</option>
           </select>
@@ -26,9 +28,11 @@ class StatsTab {
   }
 
   init() {
-    const orderBy = document.getElementById('orderBy');
+    const orderBy = document.getElementById("orderBy");
     if (orderBy) {
-      orderBy.addEventListener('change', () => this.extension.handleApiCall());
+      orderBy.addEventListener("change", () => {
+        this.extension.sortTable();
+      });
     }
   }
 }
