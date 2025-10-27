@@ -4,6 +4,7 @@ class MediumStatsExtension {
     this.tabs = {
       stats: new StatsTab(this),
       analytics: new AnalyticsTab(this),
+      "bulk-actions": new BulkActionsTab(this),
       settings: new SettingsTab(this),
     };
     // Wait for DOM to be ready before initializing
@@ -58,6 +59,11 @@ class MediumStatsExtension {
     if (this.tabs[tabName]) {
       panel.innerHTML = this.tabs[tabName].render();
       this.tabs[tabName].init();
+
+      // Refresh data when stats tab is selected
+      if (tabName === "stats") {
+        this.handleApiCall();
+      }
     }
   }
 
@@ -81,10 +87,11 @@ class MediumStatsExtension {
   getParams() {
     // Use default values if elements are not yet available
     return {
-      first: 1000, // Default to 50 posts
-      after: "", // Start from beginning
+      first: parseInt(localStorage.getItem("mediumFirst")) || 1000,
+      after: localStorage.getItem("mediumAfter") || "",
       orderBy: "latest-desc", // Default to latest posts
-      filter: true, // Show published posts only
+      filter: localStorage.getItem("mediumFilter") === "false" ? false : true,
+      username: localStorage.getItem("mediumUsername") || "",
     };
   }
 
@@ -166,7 +173,7 @@ class MediumStatsExtension {
         tab.id,
         {
           action: "call",
-          params: { first: 100, orderBy: "latest-desc", filter: true },
+          params: { first: 100, orderBy: "latest-desc", filter: true, username: localStorage.getItem("mediumUsername") || "" },
         },
         (response) => {
           if (response?.data?.[0]?.data?.user?.postsConnection?.edges) {
@@ -491,6 +498,12 @@ class MediumStatsExtension {
   async handleApiCall() {
     try {
       const params = this.getParams();
+      
+      if (!params.username) {
+        this.showStatus("Please set your Medium username in Settings first", "error");
+        return;
+      }
+      
       this.setLoadingState(true);
 
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
