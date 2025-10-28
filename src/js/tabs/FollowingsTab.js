@@ -25,7 +25,7 @@ class FollowingsTab {
     const followingsTable = document.getElementById("followingsTable");
     if (!followingsTable) return;
 
-    const username = localStorage.getItem("competitor_username");
+    const username = localStorage.getItem("self_username");
     if (!username) {
       followingsTable.innerHTML = `
         <div class="error-state">
@@ -66,7 +66,7 @@ class FollowingsTab {
   }
 
   async fetchFollowing() {
-    const username = localStorage.getItem("competitor_username");
+    const username = localStorage.getItem("self_username");
 
     const payload = {
       operationName: "UserFollowingUsersList",
