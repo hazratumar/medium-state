@@ -854,3 +854,124 @@ body {
 .progress-container.completed .progress-fill {
   background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
 }
+
+/* Enhanced Unfollow Button States */
+.unfollow-button.unfollowing {
+  background: #f59e0b;
+  position: relative;
+  overflow: hidden;
+}
+
+.unfollow-button.unfollowing::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: loading-sweep 1s infinite;
+}
+
+.unfollow-button.unfollowed {
+  background: #22c55e;
+  pointer-events: none;
+}
+
+@keyframes loading-sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Enhanced Table Row Removal */
+.removing-row {
+  animation: slideOut 0.4s ease forwards;
+  background: linear-gradient(90deg, #fef2f2, #fee2e2) !important;
+}
+
+@keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  50% {
+    transform: translateX(-10px) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%) scale(0.95);
+    height: 0;
+    padding: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced Progress Details */
+#remainingCount {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+/* Enhanced Unfollow All Button Animation */
+#unfollowAllBtn:disabled::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: button-sweep 1.5s infinite;
+}
+
+@keyframes button-sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Following Table Styles */
+#followingTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+}
+
+#followingTable th {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#followingTable td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s ease;
+}
+
+#followingTable tr:hover td {
+  background: #f9fafb;
+}
+
+#followingTable .number {
+  text-align: right;
+  font-weight: 500;
+  color: #374151;
+  width: 60px;
+}
