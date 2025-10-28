@@ -21,6 +21,11 @@ class AnalyticsTab {
         <canvas id="dailyEarningsChart" width="460" height="180"></canvas>
         <div id="dailyEarningsTooltip" class="chart-tooltip"></div>
       </div>
+      <div class="chart-container">
+        <h3>Trending Posts</h3>
+        <canvas id="trendingPostsChart" width="460" height="180"></canvas>
+        <div id="trendingPostsTooltip" class="chart-tooltip"></div>
+      </div>
       <div id="analytics-summary" class="analytics-summary"></div>
     `;
   }
@@ -29,6 +34,7 @@ class AnalyticsTab {
     this.extension.loadChartData();
     this.loadDailyEarningsChart();
     this.loadMonthlyStatsChart();
+    this.loadTrendingPostsChart();
     this.addTooltipStyles();
   }
 
@@ -423,6 +429,176 @@ class AnalyticsTab {
       tooltip.style.display = "none";
       canvas.style.cursor = "default";
     });
+  }
+
+  async loadTrendingPostsChart() {
+    const username = localStorage.getItem("mediumUsername");
+    if (!username) {
+      this.renderEmptyChart("trendingPostsChart", "Username not set");
+      return;
+    }
+
+    try {
+      const payload = {
+        operationName: "UserLifetimeStoryStatsPostsQuery",
+        variables: {
+          username: username,
+          first: 1000,
+          after: "",
+          orderBy: {
+            publishedAt: "DESC"
+          },
+          filter: {
+            published: true
+          }
+        },
+        query: `query UserLifetimeStoryStatsPostsQuery($username: ID!, $first: Int!, $after: String!, $orderBy: UserPostsOrderBy, $filter: UserPostsFilter) {
+          user(username: $username) {
+            id
+            postsConnection(
+              first: $first
+              after: $after
+              orderBy: $orderBy
+              filter: $filter
+            ) {
+              __typename
+              edges {
+                node {
+                  id
+                  title
+                  firstPublishedAt
+                  totalStats {
+                    presentations
+                    views
+                    reads
+                    __typename
+                  }
+                  earnings {
+                    total {
+                      currencyCode
+                      nanos
+                      units
+                      __typename
+                    }
+                    __typename
+                  }
+                  __typename
+                }
+                __typename
+              }
+              pageInfo {
+                endCursor
+                hasNextPage
+                __typename
+              }
+            }
+            __typename
+          }
+        }`,
+      };
+
+      const response = await fetch("https://medium.com/_/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      const posts = data?.data?.user?.postsConnection?.edges || [];
+
+      this.renderTrendingPostsChart(posts);
+    } catch (error) {
+      console.error("Error fetching trending posts:", error);
+      this.renderEmptyChart("trendingPostsChart", "Error loading data");
+    }
+  }
+
+  renderTrendingPostsChart(posts) {
+    const canvas = document.getElementById("trendingPostsChart");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const { width, height } = canvas;
+    const padding = 50;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    if (!posts || posts.length === 0) {
+      this.renderEmptyChart("trendingPostsChart", "No posts data available");
+      return;
+    }
+
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+
+    const chartData = posts
+      .map(edge => {
+        const post = edge.node;
+        const publishedDate = new Date(post.firstPublishedAt);
+        const earnings = post.earnings?.total;
+        const totalEarnings = (earnings?.units || 0) + (earnings?.nanos || 0) / 1000000000;
+        
+        return {
+          title: post.title.length > 20 ? post.title.substring(0, 20) + '...' : post.title,
+          earnings: publishedDate >= currentMonth ? totalEarnings : 0,
+          fullTitle: post.title,
+          views: post.totalStats?.views || 0
+        };
+      })
+      .sort((a, b) => b.earnings - a.earnings)
+      .slice(0, 8);
+
+    const maxEarnings = Math.max(...chartData.map(d => d.earnings), 1);
+    const barWidth = chartWidth / chartData.length;
+
+    ctx.strokeStyle = "#e5e7eb";
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
+
+    this.trendingPostsData = chartData.map((post, i) => {
+      const barHeight = Math.max((post.earnings / maxEarnings) * chartHeight, 3);
+      const x = padding + i * barWidth;
+      const y = height - padding - barHeight;
+
+      const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+      gradient.addColorStop(0, "#f59e0b");
+      gradient.addColorStop(1, "#d97706");
+
+      ctx.fillStyle = gradient;
+      this.roundRect(ctx, x + 3, y, barWidth - 6, barHeight, 4);
+      ctx.fill();
+
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "10px Inter";
+      ctx.textAlign = "center";
+      ctx.save();
+      ctx.translate(x + barWidth / 2, height - 25);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(post.title, 0, 0);
+      ctx.restore();
+
+      return { x: x + 3, y, width: barWidth - 6, height: barHeight, data: post };
+    });
+
+    this.setupTooltip(
+      canvas,
+      "trendingPostsTooltip",
+      this.trendingPostsData,
+      (data) => `<strong>${data.fullTitle}</strong><br>This Month Earnings: $${data.earnings.toFixed(2)}<br>Views: ${data.views.toLocaleString()}`
+    );
   }
 
   renderEmptyChart(canvasId, message) {
