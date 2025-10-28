@@ -10,6 +10,9 @@ A Chrome extension that provides comprehensive analytics and reporting for Mediu
 - **Advanced Filtering**: Search articles by title and apply various sorting options
 - **Earnings Tracking**: Monitor your Medium Partner Program earnings
 - **Performance Metrics**: Calculate read rates and engagement statistics
+- **Bulk Actions**: Perform operations on multiple articles at once
+- **Analytics Dashboard**: In-depth analysis of your content performance
+- **Settings Management**: Customize your extension preferences
 - **Export Ready**: React component for generating detailed reports
 
 ## Installation
@@ -35,10 +38,17 @@ A Chrome extension that provides comprehensive analytics and reporting for Mediu
 1. Navigate to Medium.com and log into your account
 2. Click the extension icon in your browser toolbar
 3. Click "Load Stats" to fetch your article data
-4. Use the controls to:
+4. Navigate through the available tabs:
+   - **Stats**: View and sort articles by views, reads, earnings, or title
+   - **Analytics**: Access detailed performance metrics and trends
+   - **Bulk Actions**: Perform operations on multiple articles simultaneously
+   - **Settings**: Configure extension preferences and display options
+5. Use the controls to:
    - Sort by views, reads, earnings, or title
    - Search for specific articles
    - View daily earnings trends in the chart
+   - Perform bulk operations on selected articles
+   - Customize your experience through settings
 
 ## Configuration
 
@@ -60,12 +70,20 @@ A Chrome extension that provides comprehensive analytics and reporting for Mediu
 ```
 medium-state/
 ├── manifest.json          # Chrome extension manifest
-├── popup.html            # Extension popup interface
-├── popup.js              # Main extension logic
-├── popup-styles.css      # Popup styling
-├── content.js            # Content script for Medium API calls
-├── ReportGenerator.jsx   # React component for advanced reporting
-├── usage-example.jsx     # Example usage of ReportGenerator
+├── src/
+│   ├── css/
+│   │   ├── popup-styles.css      # Popup styling
+│   │   └── tabs.css             # Tab-specific styles
+│   ├── html/
+│   │   └── popup.html           # Extension popup interface
+│   └── js/
+│       ├── content.js           # Content script for Medium API calls
+│       ├── popup.js             # Main extension logic
+│       └── tabs/
+│           ├── AnalyticsTab.js  # Analytics dashboard component
+│           ├── BulkActionsTab.js # Bulk operations component
+│           ├── SettingsTab.js   # Settings management component
+│           └── StatsTab.js      # Statistics display component
 └── package.json          # Dependencies and project info
 ```
 
