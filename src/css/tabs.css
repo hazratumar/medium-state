@@ -1,9 +1,18 @@
 /* Tab Container Styles */
-.bulk-actions-container {
+/* .bulk-actions-container {
   padding: 1.5rem;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+} */
+
+/* Inner Tab Panel Styles */
+.inner-tab-panel {
+  display: none;
+}
+
+.inner-tab-panel.active {
+  display: block;
 }
 
 /* Inner Tabs Navigation */
