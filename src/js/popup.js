@@ -91,13 +91,22 @@ class MediumStatsExtension {
   }
 
   getParams() {
-    // Use default values if elements are not yet available
+    const selfUsername = localStorage.getItem("self_username");
+    const competitorUsername = localStorage.getItem("competitor_username");
+
+    // Determine which username to use
+    const username = selfUsername && (!competitorUsername || competitorUsername === selfUsername) ? selfUsername : competitorUsername || "";
+
+    // Parse numeric limit safely, with default fallback
+    const limit = Number(localStorage.getItem("limit")) || 1000;
+
+    // Return parameter object with clear defaults
     return {
-      first: parseInt(localStorage.getItem("limit")) || 1000,
-      after: localStorage.getItem("mediumAfter") || "",
-      orderBy: "latest-desc", // Default to latest posts
-      filter: localStorage.getItem("mediumFilter") === "false" ? false : true,
-      username: localStorage.getItem("competitor_username") || "",
+      first: limit,
+      after: "",
+      orderBy: "latest-desc", // Default sort: latest posts
+      filter: true,
+      username,
     };
   }
 
@@ -321,7 +330,7 @@ class MediumStatsExtension {
       const params = this.getParams();
 
       if (!params.username) {
-        this.showStatus("Please set your Competitor username in Settings first", "error");
+        this.showStatus("Please set your Self or Competitor username in Settings first", "error");
         return;
       }
 

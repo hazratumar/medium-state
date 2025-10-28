@@ -64,7 +64,7 @@ class FollowersTab {
       followersTable.innerHTML = `
         <div class="error-state">
           <h3>Enter Username</h3>
-          <p>Please enter a Competitor username above and click "Fetch User Followers".</p>
+          <p>Please enter a Competitor username above and click "Fetch Followers".</p>
         </div>`;
       return;
     }

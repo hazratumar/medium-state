@@ -5,7 +5,15 @@ class StatsTab {
   }
 
   render() {
+    const params = this.extension.getParams();
+    const username = params.username || "Not set";
+    const selfUsername = localStorage.getItem("self_username");
+    const isSelf = username === selfUsername;
     return `
+      <div style="margin-bottom: 20px; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.15);">
+        <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">${isSelf ? "Your Statistics" : "Competitor Analysis"}</div>
+        <div style="color: #ffffff; font-size: ${isSelf ? "20px" : "24px"}; font-weight: 700;">${isSelf ? "Personal Dashboard" : `@${username}`}</div>
+      </div>
       <div class="controls">
         <div class="form-group">
           <label for="orderBy">Sort by</label>
