@@ -108,7 +108,7 @@ class BulkActionsTab {
       variables: {
         // id: "11e248f1d5e7",
         username: username,
-        paging: { from: "1761544140400", limit: 25 },
+        paging: { from: "0", limit: 25 },
       },
       query: `query UserFollowingUsersList($username: ID, $id: ID, $paging: PagingOptions) {
         userResult(username: $username, id: $id) {
@@ -390,7 +390,8 @@ class BulkActionsTab {
           <div class="stat-label">Following</div>
         </div>
         <div class="bulk-controls">
-          <button id="unfollowAllBtn" class="btn-danger">Unfollow All</button>
+          <button id="unfollowAllBtn" class="btn-danger" style="display: ${users.length === 0 ? "none" : "inline-block"}">Unfollow All</button>
+          <button id="refreshBtn" class="btn-primary" style="display: ${users.length === 0 ? "inline-block" : "none"}">Refresh</button>
         </div>
       </div>
       <div id="unfollowProgress" class="progress-container" style="display: none;">
@@ -435,6 +436,33 @@ class BulkActionsTab {
     const unfollowAllBtn = document.getElementById("unfollowAllBtn");
     if (unfollowAllBtn) {
       unfollowAllBtn.addEventListener("click", () => this.startUnfollowAll());
+    }
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", async () => {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = "Refreshing...";
+        try {
+          const followingUsers = await this.fetchFollowing();
+          this.followingData = followingUsers;
+          const followingsTable = document.getElementById("followingsTable");
+          if (followingsTable) {
+            followingsTable.innerHTML = this.renderFollowingList(followingUsers);
+            this.setupUnfollowButtons();
+          }
+        } catch (error) {
+          console.error("Error refreshing following list:", error);
+          // Show error toast
+          const toast = document.createElement("div");
+          toast.className = "error-toast";
+          toast.textContent = "Failed to refresh the list. Please try again.";
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+        }
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = "Refresh";
+      });
     }
   }
 
@@ -587,6 +615,12 @@ class BulkActionsTab {
 
     this.updateProgress(completed, total, "Completed!");
     document.getElementById("unfollowProgress").classList.add("completed");
+
+    // Hide unfollow button and show refresh button
+    const unfollowAllBtn = document.getElementById("unfollowAllBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    if (unfollowAllBtn) unfollowAllBtn.style.display = "none";
+    if (refreshBtn) refreshBtn.style.display = "inline-block";
   }
 
   async unfollowUserSilent(targetUserId) {
