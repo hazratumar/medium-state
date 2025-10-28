@@ -33,10 +33,7 @@ class MediumStatsExtension {
     // Make the API call immediately when popup opens
     this.checkMediumPage().then(() => {
       // Initialize first tab
-      this.switchTab("stats");
-      this.handleApiCall();
-      // Load chart data as well
-      this.loadChartData();
+      this.switchTab("settings");
     });
   }
 
@@ -77,15 +74,15 @@ class MediumStatsExtension {
         }
         return false;
       }
-      
+
       // Extract username from URL
-      const urlParts = tab.url.split('/');
-      const mediumIndex = urlParts.findIndex(part => part.includes('medium.com'));
-      if (mediumIndex !== -1 && urlParts[mediumIndex + 1] && urlParts[mediumIndex + 1].startsWith('@')) {
+      const urlParts = tab.url.split("/");
+      const mediumIndex = urlParts.findIndex((part) => part.includes("medium.com"));
+      if (mediumIndex !== -1 && urlParts[mediumIndex + 1] && urlParts[mediumIndex + 1].startsWith("@")) {
         const username = urlParts[mediumIndex + 1].substring(1); // Remove @ symbol
-        localStorage.setItem('mediumUsername', username);
+        localStorage.setItem("competitor_username", username);
       }
-      
+
       return true;
     } catch (error) {
       this.showStatus("Unable to check current page", "error");
@@ -96,11 +93,11 @@ class MediumStatsExtension {
   getParams() {
     // Use default values if elements are not yet available
     return {
-      first: parseInt(localStorage.getItem("mediumFirst")) || 1000,
+      first: parseInt(localStorage.getItem("limit")) || 1000,
       after: localStorage.getItem("mediumAfter") || "",
       orderBy: "latest-desc", // Default to latest posts
       filter: localStorage.getItem("mediumFilter") === "false" ? false : true,
-      username: localStorage.getItem("mediumUsername") || "",
+      username: localStorage.getItem("competitor_username") || "",
     };
   }
 
@@ -182,7 +179,7 @@ class MediumStatsExtension {
         tab.id,
         {
           action: "call",
-          params: { first: 100, orderBy: "latest-desc", filter: true, username: localStorage.getItem("mediumUsername") || "" },
+          params: { first: 100, orderBy: "latest-desc", filter: true, username: localStorage.getItem("competitor_username") || "" },
         },
         (response) => {
           if (response?.data?.[0]?.data?.user?.postsConnection?.edges) {
@@ -301,8 +298,6 @@ class MediumStatsExtension {
     return Array.from(dailyMap.values());
   }
 
-
-
   handleResponse(response) {
     if (!response || response.error) {
       this.showStatus(response?.error || "Failed to fetch data", "error");
@@ -324,12 +319,12 @@ class MediumStatsExtension {
   async handleApiCall() {
     try {
       const params = this.getParams();
-      
+
       if (!params.username) {
-        this.showStatus("Please set your Medium username in Settings first", "error");
+        this.showStatus("Please set your Competitor username in Settings first", "error");
         return;
       }
-      
+
       this.setLoadingState(true);
 
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

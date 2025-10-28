@@ -69,7 +69,7 @@ class AnalyticsTab {
   }
 
   async loadDailyEarningsChart() {
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
     if (!username) {
       this.renderEmptyChart("dailyEarningsChart", "Username not set");
       return;
@@ -215,7 +215,7 @@ class AnalyticsTab {
   }
 
   async loadMonthlyStatsChart() {
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
     if (!username) {
       this.renderEmptyChart("monthlyStatsChart", "Username not set");
       return;
@@ -432,7 +432,7 @@ class AnalyticsTab {
   }
 
   async loadTrendingPostsChart() {
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
     if (!username) {
       this.renderEmptyChart("trendingPostsChart", "Username not set");
       return;
@@ -446,11 +446,11 @@ class AnalyticsTab {
           first: 1000,
           after: "",
           orderBy: {
-            publishedAt: "DESC"
+            publishedAt: "DESC",
           },
           filter: {
-            published: true
-          }
+            published: true,
+          },
         },
         query: `query UserLifetimeStoryStatsPostsQuery($username: ID!, $first: Int!, $after: String!, $orderBy: UserPostsOrderBy, $filter: UserPostsFilter) {
           user(username: $username) {
@@ -539,23 +539,23 @@ class AnalyticsTab {
     currentMonth.setHours(0, 0, 0, 0);
 
     const chartData = posts
-      .map(edge => {
+      .map((edge) => {
         const post = edge.node;
         const publishedDate = new Date(post.firstPublishedAt);
         const earnings = post.earnings?.total;
         const totalEarnings = (earnings?.units || 0) + (earnings?.nanos || 0) / 1000000000;
-        
+
         return {
-          title: post.title.length > 20 ? post.title.substring(0, 20) + '...' : post.title,
+          title: post.title.length > 20 ? post.title.substring(0, 20) + "..." : post.title,
           earnings: publishedDate >= currentMonth ? totalEarnings : 0,
           fullTitle: post.title,
-          views: post.totalStats?.views || 0
+          views: post.totalStats?.views || 0,
         };
       })
       .sort((a, b) => b.earnings - a.earnings)
       .slice(0, 8);
 
-    const maxEarnings = Math.max(...chartData.map(d => d.earnings), 1);
+    const maxEarnings = Math.max(...chartData.map((d) => d.earnings), 1);
     const barWidth = chartWidth / chartData.length;
 
     ctx.strokeStyle = "#e5e7eb";

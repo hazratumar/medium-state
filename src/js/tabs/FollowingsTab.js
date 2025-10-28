@@ -25,12 +25,12 @@ class FollowingsTab {
     const followingsTable = document.getElementById("followingsTable");
     if (!followingsTable) return;
 
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
     if (!username) {
       followingsTable.innerHTML = `
         <div class="error-state">
           <h3>Unable to Load Following List</h3>
-          <p>Your Medium username is missing. Please set it in the settings and try again.</p>
+          <p>Your Self username is missing. Please set it in the settings and try again.</p>
         </div>`;
       return;
     }
@@ -66,7 +66,7 @@ class FollowingsTab {
   }
 
   async fetchFollowing() {
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
 
     const payload = {
       operationName: "UserFollowingUsersList",

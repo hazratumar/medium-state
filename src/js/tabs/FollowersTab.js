@@ -34,7 +34,7 @@ class FollowersTab {
 
   loadStoredUsername() {
     const usernameInput = document.getElementById("usernameInput");
-    const storedUsername = localStorage.getItem("mediumUsername");
+    const storedUsername = localStorage.getItem("competitor_username");
     if (usernameInput && storedUsername) {
       usernameInput.value = storedUsername;
     }
@@ -45,11 +45,11 @@ class FollowersTab {
     const username = usernameInput?.value.trim();
 
     if (!username) {
-      alert("Please enter a Medium username");
+      alert("Please enter a Competitor username");
       return;
     }
 
-    localStorage.setItem("mediumUsername", username);
+    localStorage.setItem("competitor_username", username);
     this.nextCursor = null;
     this.currentPage = 1;
     this.loadFollowers();
@@ -59,12 +59,12 @@ class FollowersTab {
     const followersTable = document.getElementById("followersTable");
     if (!followersTable) return;
 
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
     if (!username) {
       followersTable.innerHTML = `
         <div class="error-state">
           <h3>Enter Username</h3>
-          <p>Please enter a Medium username above and click "Fetch User Followers".</p>
+          <p>Please enter a Competitor username above and click "Fetch User Followers".</p>
         </div>`;
       return;
     }
@@ -89,7 +89,7 @@ class FollowersTab {
   }
 
   async fetchFollowers() {
-    const username = localStorage.getItem("mediumUsername");
+    const username = localStorage.getItem("competitor_username");
 
     const payload = {
       operationName: "UserFollowers",
@@ -147,7 +147,9 @@ class FollowersTab {
             <div class="user-username">@${userData.username || "unknown"}</div>
           </td>
           <td class="user-info">
-            <button class="btn-primary follow-btn ${userData.membership ? "member-btn" : ""}" data-user-id="${userData?.newsletterV3?.id}" data-user-real-id="${userData.id}" style="${
+            <button class="btn-primary follow-btn ${userData.membership ? "member-btn" : ""}" data-user-id="${
+          userData?.newsletterV3?.id
+        }" data-user-real-id="${userData.id}" style="${
           userData.membership ? "background: linear-gradient(135deg, #ffd700, #ffed4e); color: #333;" : ""
         }">Follow</button>
           </td>
@@ -221,20 +223,18 @@ class FollowersTab {
     }
   }
 
-
-
   getLastUserId() {
-    const rows = document.querySelectorAll('#followersDataTable tbody tr');
+    const rows = document.querySelectorAll("#followersDataTable tbody tr");
     if (rows.length === 0) return null;
     const lastRow = rows[rows.length - 1];
-    const followBtn = lastRow.querySelector('.follow-btn');
+    const followBtn = lastRow.querySelector(".follow-btn");
     return followBtn?.dataset.userRealId || null;
   }
 
   setupSkipPageButton() {
-    const skipPageBtn = document.getElementById('skipPageBtn');
+    const skipPageBtn = document.getElementById("skipPageBtn");
     if (skipPageBtn) {
-      skipPageBtn.addEventListener('click', async () => {
+      skipPageBtn.addEventListener("click", async () => {
         const lastUserId = this.getLastUserId();
         this.nextCursor = lastUserId;
         this.currentPage++;
@@ -242,8 +242,6 @@ class FollowersTab {
       });
     }
   }
-
-
 
   async handleFollowAll() {
     const followAllBtn = document.getElementById("followAllBtn");
