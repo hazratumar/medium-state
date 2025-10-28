@@ -77,6 +77,15 @@ class MediumStatsExtension {
         }
         return false;
       }
+      
+      // Extract username from URL
+      const urlParts = tab.url.split('/');
+      const mediumIndex = urlParts.findIndex(part => part.includes('medium.com'));
+      if (mediumIndex !== -1 && urlParts[mediumIndex + 1] && urlParts[mediumIndex + 1].startsWith('@')) {
+        const username = urlParts[mediumIndex + 1].substring(1); // Remove @ symbol
+        localStorage.setItem('mediumUsername', username);
+      }
+      
       return true;
     } catch (error) {
       this.showStatus("Unable to check current page", "error");
