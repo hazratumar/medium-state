@@ -10,8 +10,8 @@ class FollowersTab {
     return `
       <div class="bulk-actions-container">
         <div class="form-group" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
-          <label for="usernameInput" style="width:20%">Medium Username:</label>
-          <input type="text" id="usernameInput" placeholder="Enter Medium username" style="width: 50%;" />
+          <label for="usernameInput" style="width:20%">Competitor Username:</label>
+          <input type="text" id="usernameInput" placeholder="Enter Competitor username" style="width: 50%;" />
           <button id="fetchFollowersBtn" class="btn-primary" style="width: 25%;">Fetch Followers</button>
         </div>
         <div id="followersTable" class="table-container"></div>

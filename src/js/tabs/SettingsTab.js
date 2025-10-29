@@ -15,8 +15,8 @@ class SettingsTab {
           <small>Your personal username identifier</small>
         </div>  
         <div class="form-group">
-          <label for="competitor_username">Medium Username</label>
-          <input id="competitor_username" type="text" value="${savedUsername}" placeholder="Enter your Medium username" required />
+          <label for="competitor_username">Competitor Username</label>
+          <input id="competitor_username" type="text" value="${savedUsername}" placeholder="Enter your Competitor username" required />
           <small>Competitor Username to fetch data for (e.g., codebyumar)</small>
         </div>
         <div class="form-group">

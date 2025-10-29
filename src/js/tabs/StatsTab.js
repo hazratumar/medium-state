@@ -10,13 +10,42 @@ class StatsTab {
     const selfUsername = localStorage.getItem("self_username");
     const isSelf = username === selfUsername;
     return `
-      <div style="margin-bottom: 20px; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.15);">
-        <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">${isSelf ? "Your Statistics" : "Competitor Analysis"}</div>
-        <div style="color: #ffffff; font-size: ${isSelf ? "20px" : "24px"}; font-weight: 700;">${isSelf ? "Personal Dashboard" : `@${username}`}</div>
+      <div id="analysis-card" style="margin-bottom: 24px; padding: 24px; background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0, 0, 0, 0.08)'; this.style.borderColor='#d1d5db';" onmouseout="this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.04)'; this.style.borderColor='#e1e4e8';">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e1e4e8;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600; flex-shrink: 0;">${username
+            .charAt(0)
+            .toUpperCase()}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="color: #1f2937; font-size: 20px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em;">@${username}</div>
+            <div style="color: #6b7280; font-size: 13px; font-weight: 500;">${isSelf ? "Your Statistics" : "Competitor Analysis"}</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="flex-shrink: 0;">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <div>
+              <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Member Since</div>
+              <div id="member-since" style="color: #1f2937; font-size: 14px; font-weight: 600;">—</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="flex-shrink: 0;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <div>
+              <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Total Stories</div>
+              <div id="total-stories" style="color: #1f2937; font-size: 14px; font-weight: 600;">—</div>
+            </div>
+          </div>
+        </div>
+        <div id="report-summary-container"></div>
       </div>
       <div class="controls" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <div class="form-group" style="flex:1; min-width:220px;">
-          <label for="orderBy">Sort by</label>
           <select id="orderBy" style="width:100%; padding:8px;">
             <option value="latest-desc">Latest First</option>
             <option value="oldest-asc">Oldest First</option>
@@ -85,31 +114,42 @@ class StatsTab {
       return sum + this.calculateEarnings(p);
     }, 0);
     const readRate = totalViews > 0 ? ((totalReads / totalViews) * 100).toFixed(1) : 0;
-    
+
     const monthsActive = this.calculateMonthsActive(data);
     const avgMonthlyEarnings = monthsActive > 0 ? totalEarnings / monthsActive : 0;
 
+    const dates = data.map((p) => new Date(p.firstPublishedAt)).sort((a, b) => a - b);
+    const memberSince = dates.length > 0 ? dates[0].toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—";
+    const totalStories = posts.length;
+
+    setTimeout(() => {
+      const memberSinceEl = document.getElementById("member-since");
+      const totalStoriesEl = document.getElementById("total-stories");
+      if (memberSinceEl) memberSinceEl.textContent = memberSince;
+      if (totalStoriesEl) totalStoriesEl.textContent = totalStories;
+    }, 0);
+
     return `
-      <div class="report-summary">
-        <div class="stat-card">
-          <div class="stat-value">${this.extension.formatNumber(totalViews)}</div>
-          <div class="stat-label">Total Views</div>
+      <div class="report-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 16px;">
+        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Views</div>
+          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">${this.extension.formatNumber(totalViews)}</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">${this.extension.formatNumber(totalReads)}</div>
-          <div class="stat-label">Total Reads</div>
+        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Reads</div>
+          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">${this.extension.formatNumber(totalReads)}</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">${readRate}%</div>
-          <div class="stat-label">Read Rate</div>
+        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Read Rate</div>
+          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">${readRate}%</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">$${totalEarnings.toFixed(2)}</div>
-          <div class="stat-label">Total Earnings</div>
+        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Earnings</div>
+          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">$${totalEarnings.toFixed(2)}</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">$${avgMonthlyEarnings.toFixed(2)}</div>
-          <div class="stat-label">Avg Monthly</div>
+        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Monthly</div>
+          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">$${avgMonthlyEarnings.toFixed(2)}</div>
         </div>
       </div>`;
   }
@@ -127,10 +167,18 @@ class StatsTab {
           <p>Try adjusting your filters or check if you have published articles on Medium.</p>
         </div>`;
       }
+      const reportContainer = document.getElementById("report-summary-container");
+      if (reportContainer) {
+        reportContainer.innerHTML = "";
+      }
       return;
     }
 
     const reportSummary = this.generateReport(posts);
+    const reportContainer = document.getElementById("report-summary-container");
+    if (reportContainer) {
+      reportContainer.innerHTML = reportSummary;
+    }
     const sortedPosts = posts;
 
     const rows = sortedPosts
@@ -160,7 +208,6 @@ class StatsTab {
 
     if (table) {
       table.innerHTML = `
-      ${reportSummary}
       <div class="table-container">
         <table id="dataTable">
           <thead>
@@ -198,17 +245,17 @@ class StatsTab {
   }
 
   attachCopyHandlers() {
-    const buttons = document.querySelectorAll('.copy-title-btn');
+    const buttons = document.querySelectorAll(".copy-title-btn");
     if (!buttons || !buttons.length) return;
     buttons.forEach((btn) => {
       // avoid adding duplicate listeners
       if (btn._copyHandlerAttached) return;
       const handler = async (e) => {
-        const title = btn.getAttribute('data-title') || '';
+        const title = btn.getAttribute("data-title") || "";
         try {
           await navigator.clipboard.writeText(title);
           const original = btn.textContent;
-          btn.textContent = 'Copied';
+          btn.textContent = "Copied";
           btn.disabled = true;
           setTimeout(() => {
             btn.textContent = original;
@@ -216,16 +263,19 @@ class StatsTab {
           }, 1500);
         } catch (err) {
           // fallback: select and copy
-          const textarea = document.createElement('textarea');
+          const textarea = document.createElement("textarea");
           textarea.value = title;
           document.body.appendChild(textarea);
           textarea.select();
-          try { document.execCommand('copy'); }
-          catch (e) { /* ignore */ }
+          try {
+            document.execCommand("copy");
+          } catch (e) {
+            /* ignore */
+          }
           textarea.remove();
         }
       };
-      btn.addEventListener('click', handler);
+      btn.addEventListener("click", handler);
       btn._copyHandlerAttached = true;
     });
   }
@@ -239,71 +289,73 @@ class StatsTab {
 
   // Export the visible table rows to CSV
   exportCsv() {
-    const table = document.getElementById('dataTable');
+    const table = document.getElementById("dataTable");
     if (!table) return;
     // Use the shared CSVExporter if it's available
-    if (window.CSVExporter && typeof window.CSVExporter.exportTable === 'function') {
-      window.CSVExporter.exportTable(table, 'medium_stats.csv');
+    if (window.CSVExporter && typeof window.CSVExporter.exportTable === "function") {
+      window.CSVExporter.exportTable(table, "medium_stats.csv");
       return;
     }
 
     // Fallback: build CSV directly and handle both table formats (with or without separate Copy column)
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
     const csvRows = [];
-    csvRows.push(['S/N', 'Article Title', 'Views', 'Reads', 'Read Rate', 'Earnings'].map(h => `"${h}"`).join(','));
+    csvRows.push(["S/N", "Article Title", "Views", "Reads", "Read Rate", "Earnings"].map((h) => `"${h}"`).join(","));
 
     rows.forEach((tr) => {
-      const cells = Array.from(tr.querySelectorAll('td'));
+      const cells = Array.from(tr.querySelectorAll("td"));
       if (!cells.length) return;
 
       // detect if there's a separate copy column (presence of copy button)
-      const hasCopyColumn = cells.some(td => td.querySelector && td.querySelector('.copy-title-btn'));
+      const hasCopyColumn = cells.some((td) => td.querySelector && td.querySelector(".copy-title-btn"));
 
       // derive indices based on layout
       // layout without copy column: [0]=sn, [1]=title, [2]=views, [3]=reads, [4]=earnings
       // layout with copy column:    [0]=sn, [1]=title, [2]=copy,  [3]=views, [4]=reads, [5]=earnings
       const idx = (name) => {
         if (!hasCopyColumn) {
-          return { sn:0, title:1, views:2, reads:3, earnings:4 }[name];
+          return { sn: 0, title: 1, views: 2, reads: 3, earnings: 4 }[name];
         }
-        return { sn:0, title:1, views:3, reads:4, earnings:5 }[name];
+        return { sn: 0, title: 1, views: 3, reads: 4, earnings: 5 }[name];
       };
 
-      const sn = (cells[idx('sn')]?.textContent || '').trim();
-      const titleCell = cells[idx('title')];
-      const title = (titleCell?.querySelector('.title-text')?.textContent || titleCell?.textContent || '').trim();
-      const views = (cells[idx('views')]?.textContent || '').trim();
-      const readsCell = (cells[idx('reads')]?.textContent || '').trim();
+      const sn = (cells[idx("sn")]?.textContent || "").trim();
+      const titleCell = cells[idx("title")];
+      const title = (titleCell?.querySelector(".title-text")?.textContent || titleCell?.textContent || "").trim();
+      const views = (cells[idx("views")]?.textContent || "").trim();
+      const readsCell = (cells[idx("reads")]?.textContent || "").trim();
       let reads = readsCell;
-      let rate = '';
+      let rate = "";
       const rateMatch = readsCell.match(/\(([^)]+)\)/);
       if (rateMatch) {
         rate = rateMatch[1];
-        reads = readsCell.replace(/\s*\([^)]*\)\s*/, '').trim();
+        reads = readsCell.replace(/\s*\([^)]*\)\s*/, "").trim();
       }
-      const earnings = (cells[idx('earnings')]?.textContent || '').trim();
+      const earnings = (cells[idx("earnings")]?.textContent || "").trim();
 
       const escapeCell = (text) => {
-        if (text === null || text === undefined) return '';
-        return String(text).replace(/"/g, '""');
+        if (text === null || text === undefined) return "";
+        return String(text).replace(/"/g, "''");
       };
 
-      csvRows.push([
-        `"${escapeCell(sn)}"`,
-        `"${escapeCell(title)}"`,
-        `"${escapeCell(views)}"`,
-        `"${escapeCell(reads)}"`,
-        `"${escapeCell(rate)}"`,
-        `"${escapeCell(earnings)}"`
-      ].join(','));
+      csvRows.push(
+        [
+          `"${escapeCell(sn)}""`,
+          `"${escapeCell(title)}""`,
+          `"${escapeCell(views)}""`,
+          `"${escapeCell(reads)}""`,
+          `"${escapeCell(rate)}""`,
+          `"${escapeCell(earnings)}""`,
+        ].join(",")
+      );
     });
 
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'medium_stats.csv';
+    a.download = "medium_stats.csv";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -351,14 +403,14 @@ class StatsTab {
     const params = this.extension.getParams();
     const selfUsername = localStorage.getItem("self_username");
     const isCompetitor = params.username !== selfUsername;
-    
+
     if (isCompetitor) {
       const reads = post.totalStats?.reads || 0;
       const views = post.totalStats?.views || 0;
       const readRate = views > 0 ? (reads / views) * 100 : 0;
       return readRate < 100 ? reads / (100 - readRate) : 0;
     }
-    
+
     const earnings = post.earnings;
     return (earnings?.total?.units || 0) + (earnings?.total?.nanos || 0) / 1000000000;
   }
@@ -367,7 +419,7 @@ class StatsTab {
     const params = this.extension.getParams();
     const selfUsername = localStorage.getItem("self_username");
     const isCompetitor = params.username !== selfUsername;
-    
+
     if (isCompetitor) {
       const calculatedEarnings = this.calculateEarnings(post);
       return new Intl.NumberFormat("en-US", {
@@ -376,13 +428,13 @@ class StatsTab {
         minimumFractionDigits: 2,
       }).format(calculatedEarnings);
     }
-    
+
     return this.extension.formatEarnings(post.earnings);
   }
 
   calculateMonthsActive(data) {
     if (!data.length) return 0;
-    const dates = data.map(p => new Date(p.firstPublishedAt)).sort((a, b) => a - b);
+    const dates = data.map((p) => new Date(p.firstPublishedAt)).sort((a, b) => a - b);
     const firstPost = dates[0];
     const now = new Date();
     const diffTime = Math.abs(now - firstPost);
