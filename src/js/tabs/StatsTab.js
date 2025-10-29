@@ -14,10 +14,10 @@ class StatsTab {
         <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">${isSelf ? "Your Statistics" : "Competitor Analysis"}</div>
         <div style="color: #ffffff; font-size: ${isSelf ? "20px" : "24px"}; font-weight: 700;">${isSelf ? "Personal Dashboard" : `@${username}`}</div>
       </div>
-      <div class="controls">
-        <div class="form-group">
+      <div class="controls" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div class="form-group" style="flex:1; min-width:220px;">
           <label for="orderBy">Sort by</label>
-          <select id="orderBy">
+          <select id="orderBy" style="width:100%; padding:8px;">
             <option value="latest-desc">Latest First</option>
             <option value="oldest-asc">Oldest First</option>
             <option value="views-desc">Most Viewed</option>
@@ -30,12 +30,20 @@ class StatsTab {
             <option value="earnings-asc">Lowest Earnings</option>
           </select>
         </div>
-        <div class="form-group" style="flex: 0;">
-          <button id="refreshStats" class="btn-primary" style="margin-top: 24px; padding: 10px 20px;">
+        <div class="form-group" style="display:flex; gap:8px; align-items:center; flex:0;">
+          <button id="refreshStats" class="btn-primary" style="padding: 10px 18px; display:inline-flex; align-items:center; gap:6px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
               <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
             </svg>
             Refresh
+          </button>
+          <button id="exportCsv" class="btn-secondary" style="padding: 10px 14px; display:inline-flex; align-items:center; gap:6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            CSV
           </button>
         </div>
       </div>
@@ -55,7 +63,14 @@ class StatsTab {
     const refreshBtn = document.getElementById("refreshStats");
     if (refreshBtn) {
       refreshBtn.addEventListener("click", () => {
-        this.extension.handleApiCall();
+        this.refreshTable();
+      });
+    }
+
+    const exportBtn = document.getElementById("exportCsv");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", () => {
+        this.exportCsv();
       });
     }
   }
@@ -126,6 +141,7 @@ class StatsTab {
         <tr style="animation: fadeIn 0.3s ease ${index * 0.05}s both;">
           <td class="number">${index + 1}</td>
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
+          <td class="copy"><button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button></td>
           <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
           <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
@@ -151,6 +167,7 @@ class StatsTab {
             <tr>
               <th>S/N</th>
               <th>Article Title</th>
+              <th>Copy</th>
               <th>Views</th>
               <th>Reads (Rate)</th>
               <th>Earnings</th>
@@ -171,8 +188,126 @@ class StatsTab {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
+      .copy-title-btn { padding: 6px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; }
+      .copy-title-btn:active { transform: translateY(1px); }
     `;
     document.head.appendChild(style);
+
+    // attach copy handlers for the new column
+    this.attachCopyHandlers();
+  }
+
+  attachCopyHandlers() {
+    const buttons = document.querySelectorAll('.copy-title-btn');
+    if (!buttons || !buttons.length) return;
+    buttons.forEach((btn) => {
+      // avoid adding duplicate listeners
+      if (btn._copyHandlerAttached) return;
+      const handler = async (e) => {
+        const title = btn.getAttribute('data-title') || '';
+        try {
+          await navigator.clipboard.writeText(title);
+          const original = btn.textContent;
+          btn.textContent = 'Copied';
+          btn.disabled = true;
+          setTimeout(() => {
+            btn.textContent = original;
+            btn.disabled = false;
+          }, 1500);
+        } catch (err) {
+          // fallback: select and copy
+          const textarea = document.createElement('textarea');
+          textarea.value = title;
+          document.body.appendChild(textarea);
+          textarea.select();
+          try { document.execCommand('copy'); }
+          catch (e) { /* ignore */ }
+          textarea.remove();
+        }
+      };
+      btn.addEventListener('click', handler);
+      btn._copyHandlerAttached = true;
+    });
+  }
+
+  // Refresh only the visible table using currentPosts
+  refreshTable() {
+    if (!this.currentPosts) return;
+    // re-render the table using the current posts (keeps current sorting if updateTableRows was used)
+    this.renderTable(this.currentPosts);
+  }
+
+  // Export the visible table rows to CSV
+  exportCsv() {
+    const table = document.getElementById('dataTable');
+    if (!table) return;
+    // Use the shared CSVExporter if it's available
+    if (window.CSVExporter && typeof window.CSVExporter.exportTable === 'function') {
+      window.CSVExporter.exportTable(table, 'medium_stats.csv');
+      return;
+    }
+
+    // Fallback: build CSV directly and handle both table formats (with or without separate Copy column)
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const csvRows = [];
+    csvRows.push(['S/N', 'Article Title', 'Views', 'Reads', 'Read Rate', 'Earnings'].map(h => `"${h}"`).join(','));
+
+    rows.forEach((tr) => {
+      const cells = Array.from(tr.querySelectorAll('td'));
+      if (!cells.length) return;
+
+      // detect if there's a separate copy column (presence of copy button)
+      const hasCopyColumn = cells.some(td => td.querySelector && td.querySelector('.copy-title-btn'));
+
+      // derive indices based on layout
+      // layout without copy column: [0]=sn, [1]=title, [2]=views, [3]=reads, [4]=earnings
+      // layout with copy column:    [0]=sn, [1]=title, [2]=copy,  [3]=views, [4]=reads, [5]=earnings
+      const idx = (name) => {
+        if (!hasCopyColumn) {
+          return { sn:0, title:1, views:2, reads:3, earnings:4 }[name];
+        }
+        return { sn:0, title:1, views:3, reads:4, earnings:5 }[name];
+      };
+
+      const sn = (cells[idx('sn')]?.textContent || '').trim();
+      const titleCell = cells[idx('title')];
+      const title = (titleCell?.querySelector('.title-text')?.textContent || titleCell?.textContent || '').trim();
+      const views = (cells[idx('views')]?.textContent || '').trim();
+      const readsCell = (cells[idx('reads')]?.textContent || '').trim();
+      let reads = readsCell;
+      let rate = '';
+      const rateMatch = readsCell.match(/\(([^)]+)\)/);
+      if (rateMatch) {
+        rate = rateMatch[1];
+        reads = readsCell.replace(/\s*\([^)]*\)\s*/, '').trim();
+      }
+      const earnings = (cells[idx('earnings')]?.textContent || '').trim();
+
+      const escapeCell = (text) => {
+        if (text === null || text === undefined) return '';
+        return String(text).replace(/"/g, '""');
+      };
+
+      csvRows.push([
+        `"${escapeCell(sn)}"`,
+        `"${escapeCell(title)}"`,
+        `"${escapeCell(views)}"`,
+        `"${escapeCell(reads)}"`,
+        `"${escapeCell(rate)}"`,
+        `"${escapeCell(earnings)}"`
+      ].join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'medium_stats.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   escapeHtml(text) {
@@ -271,6 +406,7 @@ class StatsTab {
         <tr>
           <td class="number">${idx + 1}</td>
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
+          <td class="copy"><button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button></td>
           <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
           <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
@@ -279,5 +415,8 @@ class StatsTab {
       .join("");
 
     tbody.innerHTML = rows;
+
+    // re-attach copy handlers after updating rows
+    this.attachCopyHandlers();
   }
 }
