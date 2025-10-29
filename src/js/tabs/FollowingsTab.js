@@ -380,12 +380,12 @@ class FollowingsTab {
       if (!this.autoUnfollowMode) break;
 
       const user = users[i];
-      const currentTotal = users.length - 1;
+      const currentTotal = users.length;
       const remaining = currentTotal - completed;
 
       progressStatus.textContent = `Unfollowing ${user.name || user.username}...`;
       progressCount.textContent = `${completed} / ${currentTotal}`;
-      remainingCount.textContent = remaining;
+      remainingCount.textContent = remaining - 1;
 
       // Auto load more when remaining reaches 0
       if (remaining <= 3 && this.hasMoreFollowing && this.autoUnfollowMode) {
@@ -429,7 +429,7 @@ class FollowingsTab {
         if (i < users.length - 1) {
           const delay = 1000 + Math.random() * 9000;
           await this.countdown(delay, timerDisplay);
-          timerDisplay.style.background = 'linear-gradient(to right, rgba(59, 130, 246, 0.3) 0%, transparent 0%)';
+          timerDisplay.style.background = "linear-gradient(to right, rgba(59, 130, 246, 0.3) 0%, transparent 0%)";
         }
       } catch (error) {
         console.error(`Failed to unfollow ${user.username}:`, error);
@@ -500,19 +500,19 @@ class FollowingsTab {
       const startTime = Date.now();
       const endTime = startTime + ms;
       const totalDuration = ms;
-      
+
       const interval = setInterval(() => {
         if (!this.autoUnfollowMode) {
           clearInterval(interval);
           resolve();
           return;
         }
-        
+
         const now = Date.now();
         const remaining = Math.ceil((endTime - now) / 1000);
         const elapsed = now - startTime;
         const progress = Math.min((elapsed / totalDuration) * 100, 100);
-        
+
         if (remaining < 0) {
           clearInterval(interval);
           resolve();
