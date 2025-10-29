@@ -70,6 +70,9 @@ class StatsTab {
       return sum + this.calculateEarnings(p);
     }, 0);
     const readRate = totalViews > 0 ? ((totalReads / totalViews) * 100).toFixed(1) : 0;
+    
+    const monthsActive = this.calculateMonthsActive(data);
+    const avgMonthlyEarnings = monthsActive > 0 ? totalEarnings / monthsActive : 0;
 
     return `
       <div class="report-summary">
@@ -88,6 +91,10 @@ class StatsTab {
         <div class="stat-card">
           <div class="stat-value">$${totalEarnings.toFixed(2)}</div>
           <div class="stat-label">Total Earnings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">$${avgMonthlyEarnings.toFixed(2)}</div>
+          <div class="stat-label">Avg Monthly</div>
         </div>
       </div>`;
   }
@@ -236,6 +243,16 @@ class StatsTab {
     }
     
     return this.extension.formatEarnings(post.earnings);
+  }
+
+  calculateMonthsActive(data) {
+    if (!data.length) return 0;
+    const dates = data.map(p => new Date(p.firstPublishedAt)).sort((a, b) => a - b);
+    const firstPost = dates[0];
+    const now = new Date();
+    const diffTime = Math.abs(now - firstPost);
+    const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
+    return Math.max(diffMonths, 1);
   }
 
   getEarningsValue(earnings) {
