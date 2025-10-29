@@ -67,8 +67,7 @@ class StatsTab {
     const totalViews = data.reduce((sum, p) => sum + (p.totalStats?.views || 0), 0);
     const totalReads = data.reduce((sum, p) => sum + (p.totalStats?.reads || 0), 0);
     const totalEarnings = data.reduce((sum, p) => {
-      const earnings = p.earnings;
-      return sum + ((earnings?.total?.units || 0) + (earnings?.total?.nanos || 0) / 1000000000);
+      return sum + this.calculateEarnings(p);
     }, 0);
     const readRate = totalViews > 0 ? ((totalReads / totalViews) * 100).toFixed(1) : 0;
 
@@ -122,7 +121,7 @@ class StatsTab {
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
-          <td class="number">${this.extension.formatEarnings(earnings)}</td>
+          <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
         </tr>`;
       })
       .join("");
@@ -190,8 +189,8 @@ class StatsTab {
         aVal = new Date(a.node.firstPublishedAt).getTime();
         bVal = new Date(b.node.firstPublishedAt).getTime();
       } else if (field === "earnings") {
-        aVal = this.getEarningsValue(a.node.earnings);
-        bVal = this.getEarningsValue(b.node.earnings);
+        aVal = this.calculateEarnings(a.node);
+        bVal = this.calculateEarnings(b.node);
       } else if (field === "rate") {
         aVal = a.node.totalStats?.views > 0 ? (a.node.totalStats.reads / a.node.totalStats.views) * 100 : 0;
         bVal = b.node.totalStats?.views > 0 ? (b.node.totalStats.reads / b.node.totalStats.views) * 100 : 0;
@@ -204,6 +203,39 @@ class StatsTab {
     });
 
     this.updateTableRows(sorted);
+  }
+
+  calculateEarnings(post) {
+    const params = this.extension.getParams();
+    const selfUsername = localStorage.getItem("self_username");
+    const isCompetitor = params.username !== selfUsername;
+    
+    if (isCompetitor) {
+      const reads = post.totalStats?.reads || 0;
+      const views = post.totalStats?.views || 0;
+      const readRate = views > 0 ? (reads / views) * 100 : 0;
+      return readRate < 100 ? reads / (100 - readRate) : 0;
+    }
+    
+    const earnings = post.earnings;
+    return (earnings?.total?.units || 0) + (earnings?.total?.nanos || 0) / 1000000000;
+  }
+
+  formatEarningsForDisplay(post) {
+    const params = this.extension.getParams();
+    const selfUsername = localStorage.getItem("self_username");
+    const isCompetitor = params.username !== selfUsername;
+    
+    if (isCompetitor) {
+      const calculatedEarnings = this.calculateEarnings(post);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+      }).format(calculatedEarnings);
+    }
+    
+    return this.extension.formatEarnings(post.earnings);
   }
 
   getEarningsValue(earnings) {
@@ -224,7 +256,7 @@ class StatsTab {
           <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
-          <td class="number">${this.extension.formatEarnings(earnings)}</td>
+          <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
         </tr>`;
       })
       .join("");
