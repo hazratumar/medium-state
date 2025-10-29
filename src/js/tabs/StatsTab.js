@@ -10,35 +10,23 @@ class StatsTab {
     const selfUsername = localStorage.getItem("self_username");
     const isSelf = username === selfUsername;
     return `
-      <div id="analysis-card" style="margin-bottom: 24px; padding: 24px; background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0, 0, 0, 0.08)'; this.style.borderColor='#d1d5db';" onmouseout="this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.04)'; this.style.borderColor='#e1e4e8';">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e1e4e8;">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600; flex-shrink: 0;">${username
+      <div id="analysis-card" style="display: none; margin-bottom: 20px; padding: 16px 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';" onmouseout="this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.06)'; this.style.borderColor='#e5e7eb';">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: 600; flex-shrink: 0;">${username
             .charAt(0)
             .toUpperCase()}</div>
           <div style="flex: 1; min-width: 0;">
-            <div style="color: #1f2937; font-size: 20px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em;">@${username}</div>
-            <div style="color: #6b7280; font-size: 13px; font-weight: 500;">${isSelf ? "Your Statistics" : "Competitor Analysis"}</div>
+            <div id="user-name" style="color: #111827; font-size: 16px; font-weight: 600; margin-bottom: 2px;">@${username}</div>
+            <div style="color: #6b7280; font-size: 12px; font-weight: 500;">${isSelf ? "Your Statistics" : "Competitor Analysis"}</div>
           </div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="flex-shrink: 0;">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            <div>
-              <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Member Since</div>
-              <div id="member-since" style="color: #1f2937; font-size: 14px; font-weight: 600;">—</div>
+          <div style="display: flex; gap: 12px;">
+            <div style="text-align: center;">
+              <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Member</div>
+              <div id="member-since" style="color: #374151; font-size: 12px; font-weight: 600;">—</div>
             </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="flex-shrink: 0;">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-            <div>
-              <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Total Stories</div>
-              <div id="total-stories" style="color: #1f2937; font-size: 14px; font-weight: 600;">—</div>
+            <div style="text-align: center;">
+              <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Stories</div>
+              <div id="total-stories" style="color: #374151; font-size: 12px; font-weight: 600;">—</div>
             </div>
           </div>
         </div>
@@ -121,41 +109,47 @@ class StatsTab {
     const dates = data.map((p) => new Date(p.firstPublishedAt)).sort((a, b) => a - b);
     const memberSince = dates.length > 0 ? dates[0].toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—";
     const totalStories = posts.length;
+    const userName = data[0]?.creator?.name || "";
 
     setTimeout(() => {
       const memberSinceEl = document.getElementById("member-since");
       const totalStoriesEl = document.getElementById("total-stories");
+      const userNameEl = document.getElementById("user-name");
       if (memberSinceEl) memberSinceEl.textContent = memberSince;
       if (totalStoriesEl) totalStoriesEl.textContent = totalStories;
+      if (userNameEl && userName) userNameEl.textContent = userName + ` (@${this.extension.getParams().username})`;
     }, 0);
 
     return `
-      <div class="report-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 16px;">
-        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Views</div>
-          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">${this.extension.formatNumber(totalViews)}</div>
+      <div class="report-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+        <div style="text-align: center;">
+          <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Views</div>
+          <div style="color: #111827; font-size: 15px; font-weight: 700;">${this.extension.formatNumber(totalViews)}</div>
         </div>
-        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Reads</div>
-          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">${this.extension.formatNumber(totalReads)}</div>
+        <div style="text-align: center;">
+          <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Reads</div>
+          <div style="color: #111827; font-size: 15px; font-weight: 700;">${this.extension.formatNumber(totalReads)}</div>
         </div>
-        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Read Rate</div>
-          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">${readRate}%</div>
+        <div style="text-align: center;">
+          <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Rate</div>
+          <div style="color: #111827; font-size: 15px; font-weight: 700;">${readRate}%</div>
         </div>
-        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Earnings</div>
-          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">$${totalEarnings.toFixed(2)}</div>
+        <div style="text-align: center;">
+          <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Earnings</div>
+          <div style="color: #111827; font-size: 15px; font-weight: 700;">$${totalEarnings.toFixed(2)}</div>
         </div>
-        <div style="background: white; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <div style="color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Monthly</div>
-          <div style="color: #1f2937; font-size: 18px; font-weight: 700;">$${avgMonthlyEarnings.toFixed(2)}</div>
+        <div style="text-align: center;">
+          <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Monthly</div>
+          <div style="color: #111827; font-size: 15px; font-weight: 700;">$${avgMonthlyEarnings.toFixed(2)}</div>
         </div>
       </div>`;
   }
 
   renderTable(posts) {
+    const analysisCard = document.getElementById("analysis-card");
+    
     if (!posts || posts.length === 0) {
+      if (analysisCard) analysisCard.style.display = "none";
       const table = document.getElementById("table");
       if (table) {
         table.innerHTML = `
@@ -174,6 +168,7 @@ class StatsTab {
       return;
     }
 
+    if (analysisCard) analysisCard.style.display = "block";
     const reportSummary = this.generateReport(posts);
     const reportContainer = document.getElementById("report-summary-container");
     if (reportContainer) {
