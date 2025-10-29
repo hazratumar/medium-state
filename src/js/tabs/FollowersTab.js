@@ -9,7 +9,6 @@ class FollowersTab {
   render() {
     return `
       <div class="bulk-actions-container">
-        <h3>Followers Management</h3>
         <div class="form-group" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
           <label for="usernameInput" style="width:20%">Medium Username:</label>
           <input type="text" id="usernameInput" placeholder="Enter Medium username" style="width: 50%;" />

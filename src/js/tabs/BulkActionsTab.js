@@ -8,7 +8,6 @@ class BulkActionsTab {
   render() {
     return `
       <div class="bulk-actions-container">
-        <h3>Bulk Actions</h3>
         <div class="inner-tabs">
           <button class="inner-tab-button active" data-inner-tab="followers">Followers</button>
           <button class="inner-tab-button" data-inner-tab="followings">Followings</button>

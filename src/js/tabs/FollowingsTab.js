@@ -11,8 +11,7 @@ class FollowingsTab {
   render() {
     return `
       <div class="bulk-actions-container">
-        <h3>Following Management</h3>
-        <div id="followingsTable" class="table-container"></div>
+        <div id="followingsTable"></div>
       </div>
     `;
   }
