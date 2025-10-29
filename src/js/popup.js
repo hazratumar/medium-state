@@ -33,7 +33,7 @@ class MediumStatsExtension {
     // Make the API call immediately when popup opens
     this.checkMediumPage().then(() => {
       // Initialize first tab
-      this.switchTab("settings");
+      this.switchTab("stats");
     });
   }
 
@@ -111,24 +111,16 @@ class MediumStatsExtension {
   }
 
   setLoadingState(loading) {
-    // Disable sort control if present
     const orderBy = document.getElementById("orderBy");
     if (orderBy) orderBy.disabled = loading;
 
-    // Show status (CSS will show spinner when type is 'loading')
-    this.showStatus(loading ? "Fetching your Medium statistics..." : "", loading ? "loading" : "");
+    const params = this.getParams();
+    const username = params.username || "Medium";
+    this.showStatus(loading ? `Fetching @${username} statistics...` : "", loading ? "loading" : "");
 
-    // Show a skeleton loader in the table while loading
     const table = document.getElementById("table");
-    if (table) {
-      if (loading) {
-        table.innerHTML = this.getSkeletonMarkup();
-      } else {
-        // Remove skeleton if still present; real data will replace it in renderTable
-        if (table.querySelector && table.querySelector(".skeleton-row")) {
-          table.innerHTML = "";
-        }
-      }
+    if (table && loading) {
+      table.innerHTML = this.getSkeletonMarkup();
     }
   }
 

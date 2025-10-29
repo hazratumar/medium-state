@@ -39,7 +39,7 @@ class StatsTab {
             <option value="oldest-asc">Oldest First</option>
             <option value="views-desc">Most Viewed</option>
             <option value="views-asc">Least Viewed</option>
-            <option value="reads-desc">Most Read</option>
+            <option value="reads-desc" selected>Most Read</option>
             <option value="reads-asc">Least Read</option>
             <option value="rate-desc">Highest Read Rate</option>
             <option value="rate-asc">Lowest Read Rate</option>
@@ -147,7 +147,7 @@ class StatsTab {
 
   renderTable(posts) {
     const analysisCard = document.getElementById("analysis-card");
-    
+
     if (!posts || posts.length === 0) {
       if (analysisCard) analysisCard.style.display = "none";
       const table = document.getElementById("table");
@@ -174,7 +174,12 @@ class StatsTab {
     if (reportContainer) {
       reportContainer.innerHTML = reportSummary;
     }
-    const sortedPosts = posts;
+
+    const sortedPosts = [...posts].sort((a, b) => {
+      const aReads = a.node.totalStats?.reads || 0;
+      const bReads = b.node.totalStats?.reads || 0;
+      return bReads - aReads;
+    });
 
     const rows = sortedPosts
       .map((post, index) => {
@@ -367,7 +372,7 @@ class StatsTab {
     if (!this.currentPosts) return;
 
     const orderBy = document.getElementById("orderBy");
-    const sortValue = orderBy ? orderBy.value : "latest-desc";
+    const sortValue = orderBy ? orderBy.value : "reads-desc";
     const [field, direction] = sortValue.split("-");
     const isAsc = direction === "asc";
 

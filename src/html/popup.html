@@ -43,19 +43,19 @@
   </head>
   <body>
     <div class="tabs">
-      <button class="tab-button" data-tab="stats">Stats</button>
+      <button class="tab-button active" data-tab="stats">Stats</button>
       <button class="tab-button" data-tab="analytics">Analytics</button>
 
       <button class="tab-button" data-tab="bulk-actions">Bulk Actions</button>
-      <button class="tab-button active" data-tab="settings">Settings</button>
+      <button class="tab-button" data-tab="settings">Settings</button>
     </div>
 
     <div class="tab-content">
-      <div id="stats" class="tab-panel"></div>
+      <div id="stats" class="tab-panel active"></div>
       <div id="analytics" class="tab-panel"></div>
 
       <div id="bulk-actions" class="tab-panel"></div>
-      <div id="settings" class="tab-panel active"></div>
+      <div id="settings" class="tab-panel"></div>
     </div>
     <script src="../js/tabs/StatsTab.js"></script>
     <script src="../js/tabs/AnalyticsTab.js"></script>
