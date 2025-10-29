@@ -428,8 +428,9 @@ class FollowingsTab {
         }
 
         if (i < users.length - 1) {
-          const delay = 2000 + Math.random() * 1000;
+          const delay = 1000 + Math.random() * 9000;
           await this.countdown(delay, timerDisplay);
+          timerDisplay.style.background = 'linear-gradient(to right, rgba(59, 130, 246, 0.3) 0%, transparent 0%)';
         }
       } catch (error) {
         console.error(`Failed to unfollow ${user.username}:`, error);
@@ -497,19 +498,28 @@ class FollowingsTab {
 
   countdown(ms, element) {
     return new Promise((resolve) => {
-      const endTime = Date.now() + ms;
+      const startTime = Date.now();
+      const endTime = startTime + ms;
+      const totalDuration = ms;
+      
       const interval = setInterval(() => {
         if (!this.autoUnfollowMode) {
           clearInterval(interval);
           resolve();
           return;
         }
-        const remaining = Math.ceil((endTime - Date.now()) / 1000);
+        
+        const now = Date.now();
+        const remaining = Math.ceil((endTime - now) / 1000);
+        const elapsed = now - startTime;
+        const progress = Math.min((elapsed / totalDuration) * 100, 100);
+        
         if (remaining < 0) {
           clearInterval(interval);
           resolve();
         } else {
           element.textContent = `${remaining}s`;
+          element.style.background = `linear-gradient(to right, rgba(59, 130, 246, 0.3) ${progress}%, transparent ${progress}%)`;
         }
       }, 100);
     });

@@ -707,13 +707,16 @@ body {
 #nextUnfollowTimer {
   font-weight: 600;
   color: #1d4ed8;
-  background: rgba(59, 130, 246, 0.1);
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.3) 0%, transparent 0%);
   padding: 2px 8px;
   border-radius: 12px;
   margin-left: 8px;
   min-width: 60px;
   text-align: center;
   display: inline-block;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.1s linear;
 }
 
 /* Unfollow Button Styles */
