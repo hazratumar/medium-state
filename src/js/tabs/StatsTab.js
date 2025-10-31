@@ -181,11 +181,28 @@ class StatsTab {
       return bReads - aReads;
     });
 
+    // compute max values to scale cell fill intensity
+    const nodes = sortedPosts.map((p) => p.node);
+    const maxViews = Math.max(1, ...nodes.map((n) => n.totalStats?.views || 0));
+    const maxReads = Math.max(1, ...nodes.map((n) => n.totalStats?.reads || 0));
+    const maxEarnings = Math.max(1, ...nodes.map((n) => this.calculateEarnings(n) || 0));
+
     const rows = sortedPosts
       .map((post, index) => {
         const { title, totalStats, earnings } = post.node;
         const published = this.formatDate(post.node.firstPublishedAt);
         const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
+
+        const viewsVal = totalStats?.views || 0;
+        const readsVal = totalStats?.reads || 0;
+        const earningsVal = this.calculateEarnings(post.node) || 0;
+
+        // scale alpha between 0.06 and 0.6 for visibility
+        const scaleAlpha = (val, max) => Math.max(0.06, Math.min(0.6, (val / max) * 0.6));
+        const viewAlpha = scaleAlpha(viewsVal, maxViews);
+        const readAlpha = scaleAlpha(readsVal, maxReads);
+        const earnAlpha = scaleAlpha(earningsVal, maxEarnings);
+
         return `
         <tr style="animation: fadeIn 0.3s ease ${index * 0.05}s both;">
           <td class="number">${index + 1}</td>
@@ -194,9 +211,9 @@ class StatsTab {
             <button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button>
           </td>
           <td class="date">${this.escapeHtml(published)}</td>
-          <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
-          <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
-          <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
+          <td class="number" style="background: rgba(99,102,241,${viewAlpha});">${this.extension.formatNumber(totalStats?.views)}</td>
+          <td class="number" style="background: rgba(16,185,129,${readAlpha});">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
+          <td class="number" style="background: rgba(253,186,116,${earnAlpha});">${this.formatEarningsForDisplay(post.node)}</td>
         </tr>`;
       })
       .join("");
@@ -243,6 +260,8 @@ class StatsTab {
       .copy-title-btn:active { transform: translateY(1px); }
       .title-text { display:inline-block; margin-right:8px; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; }
       .date { color: #6b7280; font-size: 12px; }
+      /* smooth background fill transition for metric cells */
+      #dataTable td.number { transition: background 0.18s ease, color 0.12s ease; border-radius: 6px; padding: 6px 8px; }
     `;
     document.head.appendChild(style);
 
@@ -466,11 +485,27 @@ class StatsTab {
     const tbody = document.querySelector("#dataTable tbody");
     if (!tbody) return;
 
+    // compute max values for scaling based on provided posts
+    const nodes = posts.map((p) => p.node);
+    const maxViews = Math.max(1, ...nodes.map((n) => n.totalStats?.views || 0));
+    const maxReads = Math.max(1, ...nodes.map((n) => n.totalStats?.reads || 0));
+    const maxEarnings = Math.max(1, ...nodes.map((n) => this.calculateEarnings(n) || 0));
+
     const rows = posts
       .map((post, idx) => {
         const { title, totalStats, earnings } = post.node;
         const published = this.formatDate(post.node.firstPublishedAt);
         const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
+
+        const viewsVal = totalStats?.views || 0;
+        const readsVal = totalStats?.reads || 0;
+        const earningsVal = this.calculateEarnings(post.node) || 0;
+
+        const scaleAlpha = (val, max) => Math.max(0.06, Math.min(0.6, (val / max) * 0.6));
+        const viewAlpha = scaleAlpha(viewsVal, maxViews);
+        const readAlpha = scaleAlpha(readsVal, maxReads);
+        const earnAlpha = scaleAlpha(earningsVal, maxEarnings);
+
         return `
         <tr>
           <td class="number">${idx + 1}</td>
@@ -479,9 +514,9 @@ class StatsTab {
             <button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button>
           </td>
           <td class="date">${this.escapeHtml(published)}</td>
-          <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
-          <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
-          <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
+          <td class="number" style="background: rgba(99,102,241,${viewAlpha});">${this.extension.formatNumber(totalStats?.views)}</td>
+          <td class="number" style="background: rgba(16,185,129,${readAlpha});">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
+          <td class="number" style="background: rgba(253,186,116,${earnAlpha});">${this.formatEarningsForDisplay(post.node)}</td>
         </tr>`;
       })
       .join("");
