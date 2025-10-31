@@ -107,7 +107,7 @@ class StatsTab {
     const avgMonthlyEarnings = monthsActive > 0 ? totalEarnings / monthsActive : 0;
 
     const dates = data.map((p) => new Date(p.firstPublishedAt)).sort((a, b) => a - b);
-    const memberSince = dates.length > 0 ? dates[0].toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—";
+    const memberSince = dates.length > 0 ? dates[0].toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "—";
     const totalStories = posts.length;
     const userName = data[0]?.creator?.name || "";
 
