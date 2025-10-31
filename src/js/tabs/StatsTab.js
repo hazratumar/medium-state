@@ -184,12 +184,16 @@ class StatsTab {
     const rows = sortedPosts
       .map((post, index) => {
         const { title, totalStats, earnings } = post.node;
+        const published = this.formatDate(post.node.firstPublishedAt);
         const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
         return `
         <tr style="animation: fadeIn 0.3s ease ${index * 0.05}s both;">
           <td class="number">${index + 1}</td>
-          <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
-          <td class="copy"><button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button></td>
+          <td class="title" title="${this.escapeHtml(title)}">
+            <span class="title-text">${this.escapeHtml(title)}</span>
+            <button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button>
+          </td>
+          <td class="date">${this.escapeHtml(published)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
           <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
@@ -214,7 +218,7 @@ class StatsTab {
             <tr>
               <th>S/N</th>
               <th>Article Title</th>
-              <th>Copy</th>
+              <th>Published</th>
               <th>Views</th>
               <th>Reads (Rate)</th>
               <th>Earnings</th>
@@ -237,6 +241,8 @@ class StatsTab {
       }
       .copy-title-btn { padding: 6px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; }
       .copy-title-btn:active { transform: translateY(1px); }
+      .title-text { display:inline-block; margin-right:8px; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; }
+      .date { color: #6b7280; font-size: 12px; }
     `;
     document.head.appendChild(style);
 
@@ -297,33 +303,33 @@ class StatsTab {
       return;
     }
 
-    // Fallback: build CSV directly and handle both table formats (with or without separate Copy column)
     const rows = Array.from(table.querySelectorAll("tbody tr"));
     const csvRows = [];
-    csvRows.push(["S/N", "Article Title", "Views", "Reads", "Read Rate", "Earnings"].map((h) => `"${h}"`).join(","));
+    csvRows.push(["S/N", "Article Title", "Published", "Views", "Reads", "Read Rate", "Earnings"].map((h) => `"${h}"`).join(","));
 
     rows.forEach((tr) => {
       const cells = Array.from(tr.querySelectorAll("td"));
       if (!cells.length) return;
 
-      // detect if there's a separate copy column (presence of copy button)
-      const hasCopyColumn = cells.some((td) => td.querySelector && td.querySelector(".copy-title-btn"));
+      // new merged layout: [0]=sn, [1]=title(with copy), [2]=published, [3]=views, [4]=reads, [5]=earnings
+      // fallback older layouts are also handled
+      let idx;
+      if (cells.length >= 6) {
+        idx = { sn: 0, title: 1, published: 2, views: 3, reads: 4, earnings: 5 };
+      } else if (cells.length === 5) {
+        // older layout without copy and published
+        idx = { sn: 0, title: 1, views: 2, reads: 3, earnings: 4 };
+      } else {
+        // unexpected layout
+        return;
+      }
 
-      // derive indices based on layout
-      // layout without copy column: [0]=sn, [1]=title, [2]=views, [3]=reads, [4]=earnings
-      // layout with copy column:    [0]=sn, [1]=title, [2]=copy,  [3]=views, [4]=reads, [5]=earnings
-      const idx = (name) => {
-        if (!hasCopyColumn) {
-          return { sn: 0, title: 1, views: 2, reads: 3, earnings: 4 }[name];
-        }
-        return { sn: 0, title: 1, views: 3, reads: 4, earnings: 5 }[name];
-      };
-
-      const sn = (cells[idx("sn")]?.textContent || "").trim();
-      const titleCell = cells[idx("title")];
+      const sn = (cells[idx.sn]?.textContent || "").trim();
+      const titleCell = cells[idx.title];
       const title = (titleCell?.querySelector(".title-text")?.textContent || titleCell?.textContent || "").trim();
-      const views = (cells[idx("views")]?.textContent || "").trim();
-      const readsCell = (cells[idx("reads")]?.textContent || "").trim();
+      const published = idx.published !== undefined ? (cells[idx.published]?.textContent || "").trim() : "";
+      const views = (cells[idx.views]?.textContent || "").trim();
+      const readsCell = (cells[idx.reads]?.textContent || "").trim();
       let reads = readsCell;
       let rate = "";
       const rateMatch = readsCell.match(/\(([^)]+)\)/);
@@ -331,23 +337,23 @@ class StatsTab {
         rate = rateMatch[1];
         reads = readsCell.replace(/\s*\([^)]*\)\s*/, "").trim();
       }
-      const earnings = (cells[idx("earnings")]?.textContent || "").trim();
+      const earnings = (cells[idx.earnings]?.textContent || "").trim();
 
       const escapeCell = (text) => {
         if (text === null || text === undefined) return "";
-        return String(text).replace(/"/g, "''");
+        return String(text).replace(/"/g, '""');
       };
 
-      csvRows.push(
-        [
-          `"${escapeCell(sn)}""`,
-          `"${escapeCell(title)}""`,
-          `"${escapeCell(views)}""`,
-          `"${escapeCell(reads)}""`,
-          `"${escapeCell(rate)}""`,
-          `"${escapeCell(earnings)}""`,
-        ].join(",")
-      );
+      const values = [];
+      values.push(escapeCell(sn));
+      values.push(escapeCell(title));
+      values.push(escapeCell(published));
+      values.push(escapeCell(views));
+      values.push(escapeCell(reads));
+      values.push(escapeCell(rate));
+      values.push(escapeCell(earnings));
+
+      csvRows.push(values.map((v) => `"${v}"`).join(","));
     });
 
     const csvContent = csvRows.join("\n");
@@ -446,6 +452,16 @@ class StatsTab {
     return (earnings?.total?.units || 0) + (earnings?.total?.nanos || 0) / 1000000000;
   }
 
+  formatDate(dateString) {
+    if (!dateString) return "—";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "—";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = d.toLocaleString("en-US", { month: "short" });
+    const year = d.getFullYear();
+    return `${day} ${month}, ${year}`;
+  }
+
   updateTableRows(posts) {
     const tbody = document.querySelector("#dataTable tbody");
     if (!tbody) return;
@@ -453,12 +469,16 @@ class StatsTab {
     const rows = posts
       .map((post, idx) => {
         const { title, totalStats, earnings } = post.node;
+        const published = this.formatDate(post.node.firstPublishedAt);
         const readRate = totalStats?.views > 0 ? ((totalStats.reads / totalStats.views) * 100).toFixed(1) : 0;
         return `
         <tr>
           <td class="number">${idx + 1}</td>
-          <td class="title" title="${this.escapeHtml(title)}">${this.escapeHtml(title)}</td>
-          <td class="copy"><button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button></td>
+          <td class="title" title="${this.escapeHtml(title)}">
+            <span class="title-text">${this.escapeHtml(title)}</span>
+            <button class="copy-title-btn" data-title="${this.escapeHtml(title)}" aria-label="Copy title">Copy</button>
+          </td>
+          <td class="date">${this.escapeHtml(published)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.views)}</td>
           <td class="number">${this.extension.formatNumber(totalStats?.reads)} <small style="color: #6b7280;">(${readRate}%)</small></td>
           <td class="number">${this.formatEarningsForDisplay(post.node)}</td>
