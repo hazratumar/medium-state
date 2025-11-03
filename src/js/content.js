@@ -1,5 +1,34 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "call") {
+  console.log('Content script received message:', request.action);
+  if (request.action === "earnings") {
+    console.log('Processing earnings request:', request.params);
+    const { username, first, after, startAt, endAt } = request.params;
+    const payload = [
+      {
+        operationName: "StoryEarningsQuery",
+        query:
+          "query StoryEarningsQuery($username: ID!, $first: Int!, $after: String!, $startAt: Long!, $endAt: Long!) {\n  userResult(username: $username) {\n    __typename\n    ... on User {\n      id\n      postsConnection(\n        first: $first\n        after: $after\n        orderBy: {lifetimeEarnings: DESC}\n        filter: {published: true}\n        timeRange: {startAt: $startAt, endAt: $endAt}\n      ) {\n        __typename\n        edges {\n          node {\n            id\n            title\n            earnings {\n              monthlyEarnings: total(input: {between: {startAt: $startAt, endAt: $endAt}}) {\n                currencyCode\n                nanos\n                units\n                __typename\n              }\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n  }\n}",
+        variables: { username, first, after, startAt, endAt },
+      },
+    ];
+
+    fetch("https://medium.com/_/graphql", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        console.log('Earnings API success:', data);
+        sendResponse({ data });
+      })
+      .catch((error) => {
+        console.error('Earnings API error:', error);
+        sendResponse({ error: error.message });
+      });
+    return true;
+  } else if (request.action === "call") {
     const { first, after, orderBy, filter, username } = request.params;
     const orderByObject =
       orderBy === "latest-desc"
