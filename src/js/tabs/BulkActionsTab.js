@@ -52,6 +52,4 @@ class BulkActionsTab {
       this.followingsTab.init();
     }
   }
-
-
 }

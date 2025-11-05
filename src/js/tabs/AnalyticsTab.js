@@ -47,9 +47,9 @@ class AnalyticsTab {
   }
 
   bindEvents() {
-    const refreshBtn = document.getElementById('refreshAnalytics');
+    const refreshBtn = document.getElementById("refreshAnalytics");
     if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => this.loadData());
+      refreshBtn.addEventListener("click", () => this.loadData());
     }
   }
 
@@ -62,52 +62,56 @@ class AnalyticsTab {
 
   async loadData() {
     if (this.isLoading) return;
-    
+
     try {
       this.setLoadingState(true);
       const params = this.getApiParams();
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-      chrome.tabs.sendMessage(tab.id, {
-        action: "earnings",
-        params
-      }, (response) => {
-        this.setLoadingState(false);
-        this.handleResponse(response);
-      });
+      chrome.tabs.sendMessage(
+        tab.id,
+        {
+          action: "earnings",
+          params,
+        },
+        (response) => {
+          this.setLoadingState(false);
+          this.handleResponse(response);
+        }
+      );
     } catch (error) {
       this.setLoadingState(false);
-      this.showStatus('Failed to load analytics data', 'error');
+      this.showStatus("Failed to load analytics data", "error");
     }
   }
 
   getApiParams() {
-    const username = localStorage.getItem('self_username') || localStorage.getItem('competitor_username') || 'codebyumar';
+    const username = localStorage.getItem("self_username") || localStorage.getItem("competitor_username") || "codebyumar";
     const now = Date.now();
-    const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
-    
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
     return {
       username,
       first: 1000,
-      after: '',
+      after: "",
       startAt: sevenDaysAgo,
-      endAt: now
+      endAt: now,
     };
   }
 
   setLoadingState(loading) {
     this.isLoading = loading;
-    const loader = document.getElementById('chartLoader');
-    const refreshBtn = document.getElementById('refreshAnalytics');
-    
-    if (loader) loader.style.display = loading ? 'block' : 'none';
+    const loader = document.getElementById("chartLoader");
+    const refreshBtn = document.getElementById("refreshAnalytics");
+
+    if (loader) loader.style.display = loading ? "block" : "none";
     if (refreshBtn) refreshBtn.disabled = loading;
-    
-    this.showStatus(loading ? 'Loading analytics...' : '', loading ? 'loading' : '');
+
+    this.showStatus(loading ? "Loading analytics..." : "", loading ? "loading" : "");
   }
 
-  showStatus(message, type = '') {
-    const status = document.getElementById('analyticsStatus');
+  showStatus(message, type = "") {
+    const status = document.getElementById("analyticsStatus");
     if (status) {
       status.textContent = message;
       status.className = `status ${type}`;
@@ -116,7 +120,7 @@ class AnalyticsTab {
 
   handleResponse(response) {
     if (!response || response.error) {
-      this.showStatus(response?.error || 'Failed to fetch data', 'error');
+      this.showStatus(response?.error || "Failed to fetch data", "error");
       this.renderCharts();
       return;
     }
@@ -125,10 +129,10 @@ class AnalyticsTab {
     if (posts && posts.length > 0) {
       this.renderCharts(posts);
       this.updateSummaryStats(posts);
-      this.showStatus('Analytics loaded successfully', 'success');
+      this.showStatus("Analytics loaded successfully", "success");
     } else {
       this.renderCharts();
-      this.showStatus('No earnings data available', 'info');
+      this.showStatus("No earnings data available", "info");
     }
   }
 
@@ -144,7 +148,7 @@ class AnalyticsTab {
 
     // Get top 7 earning posts for visualization
     const topPosts = posts
-      .filter(post => post.node.earnings?.monthlyEarnings)
+      .filter((post) => post.node.earnings?.monthlyEarnings)
       .sort((a, b) => {
         const aValue = (a.node.earnings.monthlyEarnings.units || 0) + (a.node.earnings.monthlyEarnings.nanos || 0) / 1000000000;
         const bValue = (b.node.earnings.monthlyEarnings.units || 0) + (b.node.earnings.monthlyEarnings.nanos || 0) / 1000000000;
@@ -152,12 +156,12 @@ class AnalyticsTab {
       })
       .slice(0, 7);
 
-    return topPosts.map(post => {
+    return topPosts.map((post) => {
       const earnings = post.node.earnings.monthlyEarnings;
       const value = (earnings.units || 0) + (earnings.nanos || 0) / 1000000000;
       return {
-        label: post.node.title.substring(0, 10) + '...',
-        value
+        label: post.node.title.substring(0, 10) + "...",
+        value,
       };
     });
   }
@@ -169,17 +173,17 @@ class AnalyticsTab {
       const date = new Date(today);
       date.setDate(date.getDate() - (6 - i));
       return {
-        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value
+        label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        value,
       };
     });
   }
 
   updateSummaryStats(posts) {
     if (!posts || posts.length === 0) {
-      document.getElementById('totalEarnings').textContent = '$0.00';
-      document.getElementById('avgDaily').textContent = '$0.00';
-      document.getElementById('bestDay').textContent = '$0.00';
+      document.getElementById("totalEarnings").textContent = "$0.00";
+      document.getElementById("avgDaily").textContent = "$0.00";
+      document.getElementById("bestDay").textContent = "$0.00";
       return;
     }
 
@@ -188,7 +192,7 @@ class AnalyticsTab {
     let maxEarnings = 0;
     let earningPosts = 0;
 
-    posts.forEach(post => {
+    posts.forEach((post) => {
       const earnings = post.node.earnings?.monthlyEarnings;
       if (earnings) {
         const value = (earnings.units || 0) + (earnings.nanos || 0) / 1000000000;
@@ -200,8 +204,8 @@ class AnalyticsTab {
 
     const avgEarnings = earningPosts > 0 ? totalEarnings / earningPosts : 0;
 
-    document.getElementById('totalEarnings').textContent = `$${totalEarnings.toFixed(2)}`;
-    document.getElementById('avgDaily').textContent = `$${avgEarnings.toFixed(2)}`;
-    document.getElementById('bestDay').textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
+    document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
+    document.getElementById("bestDay").textContent = `$${maxEarnings.toFixed(2)}`;
   }
 }
