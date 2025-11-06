@@ -537,6 +537,14 @@ class AnalyticsTab {
     document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
     document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
 
+    // Calculate earning streak
+    let streak = 0;
+    for (let i = dailyEarnings.length - 1; i >= 0; i--) {
+      if (dailyEarnings[i].value > 0) streak++;
+      else break;
+    }
+    document.getElementById("earningStreak").textContent = `${streak} days`;
+
     // Update colors
     const changeElement = document.getElementById("percentChange");
     const growthElement = document.getElementById("growthRate");
@@ -591,6 +599,14 @@ class AnalyticsTab {
     document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
     document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
 
+    // Calculate earning streak
+    let streak = 0;
+    for (let i = dailyEarnings.length - 1; i >= 0; i--) {
+      if (dailyEarnings[i].value > 0) streak++;
+      else break;
+    }
+    document.getElementById("earningStreak").textContent = `${streak} days`;
+
     // Update colors
     const changeElement = document.getElementById("percentChange");
     const growthElement = document.getElementById("growthRate");
@@ -608,6 +624,7 @@ class AnalyticsTab {
       document.getElementById("activeDays").textContent = "0";
       document.getElementById("growthRate").textContent = "+0%";
       document.getElementById("consistency").textContent = "0%";
+      document.getElementById("earningStreak").textContent = "0 days";
       return;
     }
 
@@ -639,6 +656,7 @@ class AnalyticsTab {
     document.getElementById("activeDays").textContent = `${earningPosts}`;
     document.getElementById("growthRate").textContent = "+0%";
     document.getElementById("consistency").textContent = "0%";
+    document.getElementById("earningStreak").textContent = "0 days";
   }
 
   updateCustomRangeSummaryStats(dailyEarnings) {
@@ -665,6 +683,14 @@ class AnalyticsTab {
     document.getElementById("activeDays").textContent = `${activeDays}/${dailyEarnings.length}`;
     document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
     document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
+
+    // Calculate earning streak
+    let streak = 0;
+    for (let i = dailyEarnings.length - 1; i >= 0; i--) {
+      if (dailyEarnings[i].value > 0) streak++;
+      else break;
+    }
+    document.getElementById("earningStreak").textContent = `${streak} days`;
 
     // Update color
     const growthElement = document.getElementById("growthRate");
