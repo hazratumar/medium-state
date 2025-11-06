@@ -450,6 +450,10 @@ class AnalyticsTab {
     const lastDay = dailyEarnings[dailyEarnings.length - 1]?.value || 0;
     const growthRate = firstDay > 0 ? ((lastDay - firstDay) / firstDay) * 100 : 0;
 
+    // Calculate consistency (standard deviation)
+    const variance = dailyEarnings.reduce((sum, day) => sum + Math.pow(day.value - avgEarnings, 2), 0) / 30;
+    const consistency = avgEarnings > 0 ? Math.max(0, 100 - (Math.sqrt(variance) / avgEarnings) * 100) : 0;
+
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
@@ -457,6 +461,7 @@ class AnalyticsTab {
     document.getElementById("percentChange").textContent = `${percentChange >= 0 ? "+" : ""}${percentChange.toFixed(1)}%`;
     document.getElementById("activeDays").textContent = `${activeDays}/30`;
     document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
+    document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
 
     // Update colors
     const changeElement = document.getElementById("percentChange");
@@ -490,6 +495,10 @@ class AnalyticsTab {
     const lastDay = dailyEarnings[dailyEarnings.length - 1]?.value || 0;
     const growthRate = firstDay > 0 ? ((lastDay - firstDay) / firstDay) * 100 : 0;
 
+    // Calculate consistency (standard deviation)
+    const variance = dailyEarnings.reduce((sum, day) => sum + Math.pow(day.value - avgEarnings, 2), 0) / dailyEarnings.length;
+    const consistency = avgEarnings > 0 ? Math.max(0, 100 - (Math.sqrt(variance) / avgEarnings) * 100) : 0;
+
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
@@ -497,6 +506,7 @@ class AnalyticsTab {
     document.getElementById("percentChange").textContent = `${percentChange >= 0 ? "+" : ""}${percentChange.toFixed(1)}%`;
     document.getElementById("activeDays").textContent = `${activeDays}/${dailyEarnings.length}`;
     document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
+    document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
 
     // Update colors
     const changeElement = document.getElementById("percentChange");
@@ -514,6 +524,7 @@ class AnalyticsTab {
       document.getElementById("percentChange").textContent = "+0%";
       document.getElementById("activeDays").textContent = "0";
       document.getElementById("growthRate").textContent = "+0%";
+      document.getElementById("consistency").textContent = "0%";
       return;
     }
 
@@ -544,5 +555,6 @@ class AnalyticsTab {
     document.getElementById("percentChange").textContent = "+0%";
     document.getElementById("activeDays").textContent = `${earningPosts}`;
     document.getElementById("growthRate").textContent = "+0%";
+    document.getElementById("consistency").textContent = "0%";
   }
 }
