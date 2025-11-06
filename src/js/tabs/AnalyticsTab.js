@@ -438,11 +438,31 @@ class AnalyticsTab {
     const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
     const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
     const avgEarnings = totalEarnings / 30;
+    const activeDays = dailyEarnings.filter((day) => day.value > 0).length;
+
+    // Calculate growth rate (first vs last week)
+    const firstWeek = dailyEarnings.slice(0, 7).reduce((sum, day) => sum + day.value, 0);
+    const lastWeek = dailyEarnings.slice(-7).reduce((sum, day) => sum + day.value, 0);
+    const percentChange = firstWeek > 0 ? ((lastWeek - firstWeek) / firstWeek) * 100 : 0;
+
+    // Calculate growth rate (first vs last day)
+    const firstDay = dailyEarnings[0]?.value || 0;
+    const lastDay = dailyEarnings[dailyEarnings.length - 1]?.value || 0;
+    const growthRate = firstDay > 0 ? ((lastDay - firstDay) / firstDay) * 100 : 0;
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
     document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
+    document.getElementById("percentChange").textContent = `${percentChange >= 0 ? "+" : ""}${percentChange.toFixed(1)}%`;
+    document.getElementById("activeDays").textContent = `${activeDays}/30`;
+    document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
+
+    // Update colors
+    const changeElement = document.getElementById("percentChange");
+    const growthElement = document.getElementById("growthRate");
+    if (changeElement) changeElement.style.color = percentChange >= 0 ? "#22c55e" : "#ef4444";
+    if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
   }
 
   updateChartTitle() {
@@ -458,11 +478,31 @@ class AnalyticsTab {
     const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
     const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
     const avgEarnings = totalEarnings / dailyEarnings.length;
+    const activeDays = dailyEarnings.filter((day) => day.value > 0).length;
+
+    // Calculate growth rate (first vs last week of current month)
+    const firstWeek = dailyEarnings.slice(0, Math.min(7, dailyEarnings.length)).reduce((sum, day) => sum + day.value, 0);
+    const lastWeek = dailyEarnings.slice(-Math.min(7, dailyEarnings.length)).reduce((sum, day) => sum + day.value, 0);
+    const percentChange = firstWeek > 0 ? ((lastWeek - firstWeek) / firstWeek) * 100 : 0;
+
+    // Calculate growth rate (first vs last day)
+    const firstDay = dailyEarnings[0]?.value || 0;
+    const lastDay = dailyEarnings[dailyEarnings.length - 1]?.value || 0;
+    const growthRate = firstDay > 0 ? ((lastDay - firstDay) / firstDay) * 100 : 0;
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
     document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
+    document.getElementById("percentChange").textContent = `${percentChange >= 0 ? "+" : ""}${percentChange.toFixed(1)}%`;
+    document.getElementById("activeDays").textContent = `${activeDays}/${dailyEarnings.length}`;
+    document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
+
+    // Update colors
+    const changeElement = document.getElementById("percentChange");
+    const growthElement = document.getElementById("growthRate");
+    if (changeElement) changeElement.style.color = percentChange >= 0 ? "#22c55e" : "#ef4444";
+    if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
   }
 
   updateSummaryStats(posts) {
@@ -470,12 +510,17 @@ class AnalyticsTab {
       document.getElementById("totalEarnings").textContent = "$0.00";
       document.getElementById("avgDaily").textContent = "$0.00";
       document.getElementById("highestDay").textContent = "$0.00";
+      document.getElementById("lowestDay").textContent = "$0.00";
+      document.getElementById("percentChange").textContent = "+0%";
+      document.getElementById("activeDays").textContent = "0";
+      document.getElementById("growthRate").textContent = "+0%";
       return;
     }
 
     // Calculate actual earnings from all posts
     let totalEarnings = 0;
     let maxEarnings = 0;
+    let minEarnings = Infinity;
     let earningPosts = 0;
 
     posts.forEach((post) => {
@@ -484,14 +529,20 @@ class AnalyticsTab {
         const value = (earnings.units || 0) + (earnings.nanos || 0) / 1000000000;
         totalEarnings += value;
         maxEarnings = Math.max(maxEarnings, value);
+        minEarnings = Math.min(minEarnings, value);
         earningPosts++;
       }
     });
 
     const avgEarnings = earningPosts > 0 ? totalEarnings / earningPosts : 0;
+    minEarnings = minEarnings === Infinity ? 0 : minEarnings;
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
+    document.getElementById("percentChange").textContent = "+0%";
+    document.getElementById("activeDays").textContent = `${earningPosts}`;
+    document.getElementById("growthRate").textContent = "+0%";
   }
 }
