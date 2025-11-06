@@ -15,7 +15,12 @@ class AnalyticsTab {
               <option value="thisMonth">This Month</option>
               <option value="week">Last Week</option>
               <option value="month">Last Month</option>
+              <option value="custom">Custom Range</option>
             </select>
+            <div id="customDateRange" style="display: none; margin-left: 10px;">
+              <input type="date" id="startDate" style="margin-right: 5px;">
+              <input type="date" id="endDate">
+            </div>
             <button id="refreshAnalytics" class="refresh-btn">Refresh</button>
           </div>
         </div>
@@ -90,7 +95,22 @@ class AnalyticsTab {
     }
 
     if (timePeriod) {
-      timePeriod.addEventListener("change", () => this.loadData());
+      timePeriod.addEventListener("change", () => {
+        const customRange = document.getElementById("customDateRange");
+        if (timePeriod.value === "custom") {
+          customRange.style.display = "block";
+        } else {
+          customRange.style.display = "none";
+          this.loadData();
+        }
+      });
+    }
+
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    if (startDate && endDate) {
+      startDate.addEventListener("change", () => this.loadData());
+      endDate.addEventListener("change", () => this.loadData());
     }
   }
 
@@ -163,6 +183,8 @@ class AnalyticsTab {
         await this.loadThisMonthData();
       } else if (timePeriod === "week") {
         await this.loadWeeklyData();
+      } else if (timePeriod === "custom") {
+        await this.loadCustomRangeData();
       } else {
         await this.loadMonthlyData();
       }
@@ -263,6 +285,58 @@ class AnalyticsTab {
     this.earningsChart.render(dailyEarnings);
     this.updateMonthlySummaryStats(dailyEarnings);
     this.showStatus("Monthly analytics loaded successfully", "success");
+  }
+
+  async loadCustomRangeData() {
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+
+    if (!startDateInput?.value || !endDateInput?.value) {
+      this.setLoadingState(false);
+      this.showStatus("Please select both start and end dates", "error");
+      return;
+    }
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const username = localStorage.getItem("self_username") || localStorage.getItem("competitor_username") || "codebyumar";
+    const dailyEarnings = [];
+
+    const startDate = new Date(startDateInput.value);
+    const endDate = new Date(endDateInput.value);
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+    for (let i = 0; i <= daysDiff; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const startAt = date.setHours(0, 0, 0, 0);
+      const endAt = date.setHours(23, 59, 59, 999);
+
+      const params = {
+        username,
+        first: 1000,
+        after: "",
+        startAt,
+        endAt,
+      };
+
+      await new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
+          const dayEarnings = this.calculateDayEarnings(response);
+          dailyEarnings.push({
+            label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            value: dayEarnings,
+          });
+          resolve();
+        });
+      });
+    }
+
+    this.setLoadingState(false);
+    this.updateChartTitle();
+    this.updateCanvasWidth();
+    this.earningsChart.render(dailyEarnings);
+    this.updateCustomRangeSummaryStats(dailyEarnings);
+    this.showStatus("Custom range analytics loaded successfully", "success");
   }
 
   getApiParams() {
@@ -475,6 +549,15 @@ class AnalyticsTab {
     let title = "Daily Earnings - Last Week";
     if (timePeriod === "thisMonth") title = "Daily Earnings - This Month";
     if (timePeriod === "month") title = "Daily Earnings - Last Month";
+    if (timePeriod === "custom") {
+      const startDate = document.getElementById("startDate")?.value;
+      const endDate = document.getElementById("endDate")?.value;
+      if (startDate && endDate) {
+        title = `Daily Earnings - ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`;
+      } else {
+        title = "Daily Earnings - Custom Range";
+      }
+    }
     document.getElementById("chartTitle").textContent = title;
   }
 
@@ -556,5 +639,35 @@ class AnalyticsTab {
     document.getElementById("activeDays").textContent = `${earningPosts}`;
     document.getElementById("growthRate").textContent = "+0%";
     document.getElementById("consistency").textContent = "0%";
+  }
+
+  updateCustomRangeSummaryStats(dailyEarnings) {
+    const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
+    const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
+    const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
+    const avgEarnings = totalEarnings / dailyEarnings.length;
+    const activeDays = dailyEarnings.filter((day) => day.value > 0).length;
+
+    // Calculate growth rate (first vs last day)
+    const firstDay = dailyEarnings[0]?.value || 0;
+    const lastDay = dailyEarnings[dailyEarnings.length - 1]?.value || 0;
+    const growthRate = firstDay > 0 ? ((lastDay - firstDay) / firstDay) * 100 : 0;
+
+    // Calculate consistency (standard deviation)
+    const variance = dailyEarnings.reduce((sum, day) => sum + Math.pow(day.value - avgEarnings, 2), 0) / dailyEarnings.length;
+    const consistency = avgEarnings > 0 ? Math.max(0, 100 - (Math.sqrt(variance) / avgEarnings) * 100) : 0;
+
+    document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
+    document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
+    document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
+    document.getElementById("percentChange").textContent = "+0%";
+    document.getElementById("activeDays").textContent = `${activeDays}/${dailyEarnings.length}`;
+    document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
+    document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
+
+    // Update color
+    const growthElement = document.getElementById("growthRate");
+    if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
   }
 }
