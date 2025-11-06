@@ -31,16 +31,44 @@ class AnalyticsTab {
         </div>
         <div class="stats-summary">
           <div class="stat-card">
-            <span id="totalLabel" class="stat-label">Total Earnings</span>
+            <span class="stat-label">Total Earnings</span>
             <span id="totalEarnings" class="stat-value">$0.00</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Avg Per Post</span>
+            <span class="stat-label">Avg Daily</span>
             <span id="avgDaily" class="stat-value">$0.00</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Top Post</span>
-            <span id="bestDay" class="stat-value">$0.00</span>
+            <span class="stat-label">Highest Day</span>
+            <span id="highestDay" class="stat-value">$0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Lowest Day</span>
+            <span id="lowestDay" class="stat-value">$0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">vs Previous</span>
+            <span id="percentChange" class="stat-value">+0%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Active Days</span>
+            <span id="activeDays" class="stat-value">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Growth Rate</span>
+            <span id="growthRate" class="stat-value">0%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Consistency</span>
+            <span id="consistency" class="stat-value">0%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Peak Day</span>
+            <span id="peakDay" class="stat-value">Mon</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Streak</span>
+            <span id="earningStreak" class="stat-value">0 days</span>
           </div>
         </div>
       </div>
@@ -148,20 +176,16 @@ class AnalyticsTab {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     const username = localStorage.getItem("self_username") || localStorage.getItem("competitor_username") || "codebyumar";
     const dailyEarnings = [];
+    const previousWeekEarnings = [];
 
+    // Load current week
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const startAt = date.setHours(0, 0, 0, 0);
       const endAt = date.setHours(23, 59, 59, 999);
 
-      const params = {
-        username,
-        first: 1000,
-        after: "",
-        startAt,
-        endAt,
-      };
+      const params = { username, first: 1000, after: "", startAt, endAt };
 
       await new Promise((resolve) => {
         chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
@@ -169,7 +193,26 @@ class AnalyticsTab {
           dailyEarnings.push({
             label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
             value: dayEarnings,
+            date: new Date(startAt),
           });
+          resolve();
+        });
+      });
+    }
+
+    // Load previous week for comparison
+    for (let i = 13; i >= 7; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const startAt = date.setHours(0, 0, 0, 0);
+      const endAt = date.setHours(23, 59, 59, 999);
+
+      const params = { username, first: 1000, after: "", startAt, endAt };
+
+      await new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
+          const dayEarnings = this.calculateDayEarnings(response);
+          previousWeekEarnings.push(dayEarnings);
           resolve();
         });
       });
@@ -179,7 +222,7 @@ class AnalyticsTab {
     this.updateChartTitle();
     this.updateCanvasWidth();
     this.earningsChart.render(dailyEarnings);
-    this.updateWeeklySummaryStats(dailyEarnings);
+    this.updateWeeklySummaryStats(dailyEarnings, previousWeekEarnings);
     this.showStatus("Weekly analytics loaded successfully", "success");
   }
 
@@ -340,14 +383,54 @@ class AnalyticsTab {
     return totalEarnings;
   }
 
-  updateWeeklySummaryStats(dailyEarnings) {
+  updateWeeklySummaryStats(dailyEarnings, previousWeekEarnings = []) {
     const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
     const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
+    const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
     const avgEarnings = totalEarnings / 7;
+    const activeDays = dailyEarnings.filter((day) => day.value > 0).length;
+
+    // Calculate percentage change vs previous week
+    const previousTotal = previousWeekEarnings.reduce((sum, earnings) => sum + earnings, 0);
+    const percentChange = previousTotal > 0 ? ((totalEarnings - previousTotal) / previousTotal) * 100 : 0;
+
+    // Calculate growth rate (first vs last day)
+    const firstDay = dailyEarnings[0]?.value || 0;
+    const lastDay = dailyEarnings[dailyEarnings.length - 1]?.value || 0;
+    const growthRate = firstDay > 0 ? ((lastDay - firstDay) / firstDay) * 100 : 0;
+
+    // Calculate consistency (standard deviation)
+    const variance = dailyEarnings.reduce((sum, day) => sum + Math.pow(day.value - avgEarnings, 2), 0) / 7;
+    const consistency = avgEarnings > 0 ? Math.max(0, 100 - (Math.sqrt(variance) / avgEarnings) * 100) : 0;
+
+    // Find peak earning day of week
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const peakDayIndex = dailyEarnings.findIndex((day) => day.value === maxEarnings);
+    const peakDay = dayNames[peakDayIndex] || "N/A";
+
+    // Calculate earning streak
+    let streak = 0;
+    for (let i = dailyEarnings.length - 1; i >= 0; i--) {
+      if (dailyEarnings[i].value > 0) streak++;
+      else break;
+    }
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
-    document.getElementById("bestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
+    document.getElementById("percentChange").textContent = `${percentChange >= 0 ? "+" : ""}${percentChange.toFixed(1)}%`;
+    document.getElementById("activeDays").textContent = `${activeDays}/7`;
+    document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
+    document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
+    document.getElementById("peakDay").textContent = peakDay;
+    document.getElementById("earningStreak").textContent = `${streak} days`;
+
+    // Update colors
+    const changeElement = document.getElementById("percentChange");
+    const growthElement = document.getElementById("growthRate");
+    if (changeElement) changeElement.style.color = percentChange >= 0 ? "#22c55e" : "#ef4444";
+    if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
   }
 
   updateMonthlySummaryStats(dailyEarnings) {
@@ -357,7 +440,7 @@ class AnalyticsTab {
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
-    document.getElementById("bestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
   }
 
   updateChartTitle() {
@@ -375,14 +458,14 @@ class AnalyticsTab {
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
-    document.getElementById("bestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
   }
 
   updateSummaryStats(posts) {
     if (!posts || posts.length === 0) {
       document.getElementById("totalEarnings").textContent = "$0.00";
       document.getElementById("avgDaily").textContent = "$0.00";
-      document.getElementById("bestDay").textContent = "$0.00";
+      document.getElementById("highestDay").textContent = "$0.00";
       return;
     }
 
@@ -405,6 +488,6 @@ class AnalyticsTab {
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
-    document.getElementById("bestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
   }
 }
