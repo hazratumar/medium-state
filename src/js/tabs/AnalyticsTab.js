@@ -116,7 +116,7 @@ class AnalyticsTab {
 
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const daysInMonth = today.getDate();
+    const daysInMonth = today.getDate() - 1; // Exclude today
 
     for (let i = 0; i < daysInMonth; i++) {
       const date = new Date(firstDay);
@@ -178,8 +178,8 @@ class AnalyticsTab {
     const dailyEarnings = [];
     const previousWeekEarnings = [];
 
-    // Load current week
-    for (let i = 6; i >= 0; i--) {
+    // Load current week (exclude today)
+    for (let i = 6; i >= 1; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const startAt = date.setHours(0, 0, 0, 0);
@@ -231,7 +231,7 @@ class AnalyticsTab {
     const username = localStorage.getItem("self_username") || localStorage.getItem("competitor_username") || "codebyumar";
     const dailyEarnings = [];
 
-    for (let i = 29; i >= 0; i--) {
+    for (let i = 29; i >= 1; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const startAt = date.setHours(0, 0, 0, 0);
@@ -436,29 +436,33 @@ class AnalyticsTab {
   updateMonthlySummaryStats(dailyEarnings) {
     const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
     const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
+    const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
     const avgEarnings = totalEarnings / 30;
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
   }
 
   updateChartTitle() {
     const timePeriod = document.getElementById("timePeriod")?.value || "thisMonth";
     let title = "Daily Earnings - Last Week";
-    if (timePeriod === "month") title = "Daily Earnings - Last Month";
     if (timePeriod === "thisMonth") title = "Daily Earnings - This Month";
+    if (timePeriod === "month") title = "Daily Earnings - Last Month";
     document.getElementById("chartTitle").textContent = title;
   }
 
   updateThisMonthSummaryStats(dailyEarnings) {
     const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
     const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
+    const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
     const avgEarnings = totalEarnings / dailyEarnings.length;
 
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+    document.getElementById("lowestDay").textContent = `$${minEarnings.toFixed(2)}`;
   }
 
   updateSummaryStats(posts) {
