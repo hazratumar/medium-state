@@ -10,11 +10,17 @@ class AnalyticsTab {
       <div class="analytics-container">
         <div class="analytics-header">
           <h3>Analytics Dashboard</h3>
-          <button id="refreshAnalytics" class="refresh-btn">Refresh</button>
+          <div class="analytics-controls">
+            <select id="timePeriod" class="time-period-select">
+              <option value="week">Last Week</option>
+              <option value="month">Last Month</option>
+            </select>
+            <button id="refreshAnalytics" class="refresh-btn">Refresh</button>
+          </div>
         </div>
         <div class="chart-section">
           <div class="chart-header">
-            <h4>Top Earning Posts</h4>
+            <h4 id="chartTitle">Top Earning Posts - Last Week</h4>
             <div id="analyticsStatus" class="status"></div>
           </div>
           <div class="chart-container">
@@ -24,7 +30,7 @@ class AnalyticsTab {
         </div>
         <div class="stats-summary">
           <div class="stat-card">
-            <span class="stat-label">Total Earnings</span>
+            <span id="totalLabel" class="stat-label">Total Earnings</span>
             <span id="totalEarnings" class="stat-value">$0.00</span>
           </div>
           <div class="stat-card">
@@ -48,8 +54,14 @@ class AnalyticsTab {
 
   bindEvents() {
     const refreshBtn = document.getElementById("refreshAnalytics");
+    const timePeriod = document.getElementById("timePeriod");
+    
     if (refreshBtn) {
       refreshBtn.addEventListener("click", () => this.loadData());
+    }
+    
+    if (timePeriod) {
+      timePeriod.addEventListener("change", () => this.loadData());
     }
   }
 
@@ -65,36 +77,84 @@ class AnalyticsTab {
 
     try {
       this.setLoadingState(true);
-      const params = this.getApiParams();
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-      chrome.tabs.sendMessage(
-        tab.id,
-        {
-          action: "earnings",
-          params,
-        },
-        (response) => {
-          this.setLoadingState(false);
-          this.handleResponse(response);
-        }
-      );
+      const timePeriod = document.getElementById("timePeriod")?.value || "week";
+      
+      if (timePeriod === "week") {
+        await this.loadWeeklyData();
+      } else {
+        await this.loadMonthlyData();
+      }
     } catch (error) {
       this.setLoadingState(false);
       this.showStatus("Failed to load analytics data", "error");
     }
   }
 
+  async loadWeeklyData() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const username = localStorage.getItem("self_username") || localStorage.getItem("competitor_username") || "codebyumar";
+    const dailyEarnings = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const startAt = date.setHours(0, 0, 0, 0);
+      const endAt = date.setHours(23, 59, 59, 999);
+      
+      const params = {
+        username,
+        first: 1000,
+        after: "",
+        startAt,
+        endAt
+      };
+      
+      await new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
+          const dayEarnings = this.calculateDayEarnings(response);
+          dailyEarnings.push({
+            label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            value: dayEarnings
+          });
+          resolve();
+        });
+      });
+    }
+    
+    this.setLoadingState(false);
+    this.updateChartTitle();
+    this.earningsChart.render(dailyEarnings);
+    this.updateWeeklySummaryStats(dailyEarnings);
+    this.showStatus("Weekly analytics loaded successfully", "success");
+  }
+
+  async loadMonthlyData() {
+    const params = this.getApiParams();
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
+      this.setLoadingState(false);
+      this.handleResponse(response);
+    });
+  }
+
   getApiParams() {
     const username = localStorage.getItem("self_username") || localStorage.getItem("competitor_username") || "codebyumar";
+    const timePeriod = document.getElementById("timePeriod")?.value || "week";
     const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    
+    let startAt;
+    if (timePeriod === "month") {
+      startAt = now - 30 * 24 * 60 * 60 * 1000; // 30 days ago
+    } else {
+      startAt = now - 7 * 24 * 60 * 60 * 1000; // 7 days ago
+    }
 
     return {
       username,
       first: 1000,
       after: "",
-      startAt: sevenDaysAgo,
+      startAt,
       endAt: now,
     };
   }
@@ -127,6 +187,7 @@ class AnalyticsTab {
 
     const posts = response?.data?.[0]?.data?.userResult?.postsConnection?.edges;
     if (posts && posts.length > 0) {
+      this.updateChartTitle();
       this.renderCharts(posts);
       this.updateSummaryStats(posts);
       this.showStatus("Analytics loaded successfully", "success");
@@ -177,6 +238,38 @@ class AnalyticsTab {
         value,
       };
     });
+  }
+
+  calculateDayEarnings(response) {
+    if (!response?.data?.[0]?.data?.userResult?.postsConnection?.edges) return 0;
+    
+    const posts = response.data[0].data.userResult.postsConnection.edges;
+    let totalEarnings = 0;
+    
+    posts.forEach((post) => {
+      const earnings = post.node.earnings?.monthlyEarnings;
+      if (earnings) {
+        totalEarnings += (earnings.units || 0) + (earnings.nanos || 0) / 1000000000;
+      }
+    });
+    
+    return totalEarnings;
+  }
+
+  updateWeeklySummaryStats(dailyEarnings) {
+    const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
+    const maxEarnings = Math.max(...dailyEarnings.map(day => day.value));
+    const avgEarnings = totalEarnings / 7;
+
+    document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
+    document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
+    document.getElementById("bestDay").textContent = `$${maxEarnings.toFixed(2)}`;
+  }
+
+  updateChartTitle() {
+    const timePeriod = document.getElementById("timePeriod")?.value || "week";
+    const title = timePeriod === "month" ? "Top Earning Posts - Last Month" : "Daily Earnings - Last Week";
+    document.getElementById("chartTitle").textContent = title;
   }
 
   updateSummaryStats(posts) {

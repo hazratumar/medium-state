@@ -351,8 +351,66 @@ body {
 }
 
 /* Analytics Section */
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.analytics-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.time-period-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+}
+
+.refresh-btn {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .chart-container {
   margin-bottom: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-header h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
 }
 
 .chart-container h3 {
@@ -374,6 +432,13 @@ body {
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+}
+
+.chart-loader {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 14px;
 }
 
 /* Settings Form */
