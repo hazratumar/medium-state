@@ -155,9 +155,11 @@ class AnalyticsTab {
       await new Promise((resolve) => {
         chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
           const dayEarnings = this.calculateDayEarnings(response);
+          const posts = this.extractPostsFromResponse(response);
           dailyEarnings.push({
             label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
             value: dayEarnings,
+            posts: posts
           });
           resolve();
         });
@@ -212,10 +214,12 @@ class AnalyticsTab {
       await new Promise((resolve) => {
         chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
           const dayEarnings = this.calculateDayEarnings(response);
+          const posts = this.extractPostsFromResponse(response);
           dailyEarnings.push({
             label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
             value: dayEarnings,
             date: new Date(startAt),
+            posts: posts
           });
           resolve();
         });
@@ -270,9 +274,11 @@ class AnalyticsTab {
       await new Promise((resolve) => {
         chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
           const dayEarnings = this.calculateDayEarnings(response);
+          const posts = this.extractPostsFromResponse(response);
           dailyEarnings.push({
             label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
             value: dayEarnings,
+            posts: posts
           });
           resolve();
         });
@@ -322,9 +328,11 @@ class AnalyticsTab {
       await new Promise((resolve) => {
         chrome.tabs.sendMessage(tab.id, { action: "earnings", params }, (response) => {
           const dayEarnings = this.calculateDayEarnings(response);
+          const posts = this.extractPostsFromResponse(response);
           dailyEarnings.push({
             label: new Date(startAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
             value: dayEarnings,
+            posts: posts
           });
           resolve();
         });
@@ -455,6 +463,19 @@ class AnalyticsTab {
     });
 
     return totalEarnings;
+  }
+
+  extractPostsFromResponse(response) {
+    if (!response?.data?.[0]?.data?.userResult?.postsConnection?.edges) return [];
+    
+    return response.data[0].data.userResult.postsConnection.edges.map(post => {
+      const earnings = post.node.earnings?.monthlyEarnings;
+      const earningsValue = earnings ? (earnings.units || 0) + (earnings.nanos || 0) / 1000000000 : 0;
+      return {
+        title: post.node.title,
+        earnings: earningsValue
+      };
+    }).filter(post => post.earnings > 0);
   }
 
   updateWeeklySummaryStats(dailyEarnings, previousWeekEarnings = []) {
