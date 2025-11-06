@@ -80,9 +80,13 @@ class BarChart {
     this.ctx.font = '10px Inter';
     this.ctx.textAlign = 'center';
     
+    const showEveryNth = data.length > 15 ? Math.ceil(data.length / 10) : 1;
+    
     data.forEach((item, i) => {
-      const x = padding + i * barWidth;
-      this.ctx.fillText(item.label, x + barWidth / 2, height - 8);
+      if (i % showEveryNth === 0 || i === data.length - 1) {
+        const x = padding + i * barWidth;
+        this.ctx.fillText(item.label, x + barWidth / 2, height - 8);
+      }
     });
   }
 }
