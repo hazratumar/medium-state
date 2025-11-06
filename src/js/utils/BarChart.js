@@ -160,7 +160,7 @@ class BarChart {
     let content = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin: 0; color: #333;">${data.label} - Posts & Earnings</h3>
-        <button onclick="this.parentElement.parentElement.parentElement.parentElement.style.display='none'" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer;">×</button>
+        <button id="closeModal" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 8px; cursor: pointer; width: 50px; height: 32px; display: flex; align-items: center; justify-content: center;">Close</button>
       </div>
       <div style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
         <strong>Total Earnings: $${data.value.toFixed(2)}</strong>
@@ -170,6 +170,7 @@ class BarChart {
       content += `<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <thead>
           <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+            <th style="text-align: left; padding: 12px 8px; color: #495057;">S.No</th>
             <th style="text-align: left; padding: 12px 8px; color: #495057;">Post Title</th>
             <th style="text-align: right; padding: 12px 8px; color: #495057;">Earnings</th>
           </tr>
@@ -180,6 +181,7 @@ class BarChart {
         const earnings = post.earnings || 0;
         const bgColor = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
         content += `<tr style="background: ${bgColor};">
+          <td style="padding: 10px 8px; border-bottom: 1px solid #dee2e6;">${index + 1}</td>
           <td style="padding: 10px 8px; border-bottom: 1px solid #dee2e6;">${post.title}</td>
           <td style="text-align: right; padding: 10px 8px; border-bottom: 1px solid #dee2e6; font-weight: 600;">$${earnings.toFixed(2)}</td>
         </tr>`;
@@ -192,6 +194,12 @@ class BarChart {
 
     this.modal.firstChild.innerHTML = content;
     this.modal.style.display = "flex";
+    
+    // Bind close button event
+    const closeBtn = this.modal.querySelector('#closeModal');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.hideModal());
+    }
   }
 
   hideModal() {
