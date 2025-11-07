@@ -36,16 +36,40 @@ class AnalyticsTab {
         </div>
         <div class="stats-summary">
           <div class="stat-card">
-            <span class="stat-label">Expected Earnings</span>
-            <span id="expectedEarnings" class="stat-value">$0.00</span>
-          </div>
-          <div class="stat-card">
             <span class="stat-label">Total Earnings</span>
             <span id="totalEarnings" class="stat-value">$0.00</span>
           </div>
           <div class="stat-card">
+            <span class="stat-label">Expected Earnings</span>
+            <span id="expectedEarnings" class="stat-value">$0.00</span>
+          </div>
+          <div class="stat-card">
             <span class="stat-label">Avg Daily</span>
             <span id="avgDaily" class="stat-value">$0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Best Post</span>
+            <span id="bestPost" class="stat-value">None</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Posts</span>
+            <span id="totalPosts" class="stat-value">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Avg Per Post</span>
+            <span id="avgPerPost" class="stat-value">$0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Active Days</span>
+            <span id="activeDays" class="stat-value">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Zero Days</span>
+            <span id="zeroDays" class="stat-value">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Efficiency</span>
+            <span id="efficiency" class="stat-value">$0.00</span>
           </div>
           <div class="stat-card">
             <span class="stat-label">Highest Day</span>
@@ -56,16 +80,20 @@ class AnalyticsTab {
             <span id="lowestDay" class="stat-value">$0.00</span>
           </div>
           <div class="stat-card">
+            <span class="stat-label">Streak</span>
+            <span id="earningStreak" class="stat-value">0 days</span>
+          </div>
+          <div class="stat-card">
             <span class="stat-label">vs Previous</span>
             <span id="percentChange" class="stat-value">+0%</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Active Days</span>
-            <span id="activeDays" class="stat-value">0</span>
-          </div>
-          <div class="stat-card">
             <span class="stat-label">Growth Rate</span>
             <span id="growthRate" class="stat-value">0%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Momentum</span>
+            <span id="momentum" class="stat-value">Stable</span>
           </div>
           <div class="stat-card">
             <span class="stat-label">Consistency</span>
@@ -74,10 +102,6 @@ class AnalyticsTab {
           <div class="stat-card">
             <span class="stat-label">Peak Day</span>
             <span id="peakDay" class="stat-value">Mon</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Streak</span>
-            <span id="earningStreak" class="stat-value">0 days</span>
           </div>
         </div>
       </div>
@@ -514,6 +538,19 @@ class AnalyticsTab {
       else break;
     }
 
+    // Calculate new metrics
+    const allPosts = dailyEarnings.flatMap(day => day.posts || []);
+    const bestPost = allPosts.reduce((best, post) => post.earnings > (best?.earnings || 0) ? post : best, null);
+    const totalPosts = allPosts.length;
+    const avgPerPost = totalPosts > 0 ? totalEarnings / totalPosts : 0;
+    const zeroDays = 7 - activeDays;
+    const efficiency = activeDays > 0 ? totalEarnings / activeDays : 0;
+    
+    // Calculate momentum
+    const firstHalf = dailyEarnings.slice(0, 3).reduce((sum, day) => sum + day.value, 0);
+    const secondHalf = dailyEarnings.slice(4).reduce((sum, day) => sum + day.value, 0);
+    const momentum = secondHalf > firstHalf ? "Rising" : secondHalf < firstHalf ? "Falling" : "Stable";
+
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
@@ -524,12 +561,20 @@ class AnalyticsTab {
     document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
     document.getElementById("peakDay").textContent = peakDay;
     document.getElementById("earningStreak").textContent = `${streak} days`;
+    document.getElementById("bestPost").textContent = bestPost ? `$${bestPost.earnings.toFixed(2)}` : "None";
+    document.getElementById("totalPosts").textContent = totalPosts;
+    document.getElementById("avgPerPost").textContent = `$${avgPerPost.toFixed(2)}`;
+    document.getElementById("zeroDays").textContent = zeroDays;
+    document.getElementById("momentum").textContent = momentum;
+    document.getElementById("efficiency").textContent = `$${efficiency.toFixed(2)}`;
 
     // Update colors
     const changeElement = document.getElementById("percentChange");
     const growthElement = document.getElementById("growthRate");
+    const momentumElement = document.getElementById("momentum");
     if (changeElement) changeElement.style.color = percentChange >= 0 ? "#22c55e" : "#ef4444";
     if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
+    if (momentumElement) momentumElement.style.color = momentum === "Rising" ? "#22c55e" : momentum === "Falling" ? "#ef4444" : "#6b7280";
   }
 
   updateMonthlySummaryStats(dailyEarnings) {
@@ -553,6 +598,26 @@ class AnalyticsTab {
     const variance = dailyEarnings.reduce((sum, day) => sum + Math.pow(day.value - avgEarnings, 2), 0) / 30;
     const consistency = avgEarnings > 0 ? Math.max(0, 100 - (Math.sqrt(variance) / avgEarnings) * 100) : 0;
 
+    // Calculate earning streak
+    let streak = 0;
+    for (let i = dailyEarnings.length - 1; i >= 0; i--) {
+      if (dailyEarnings[i].value > 0) streak++;
+      else break;
+    }
+
+    // Calculate new metrics
+    const allPosts = dailyEarnings.flatMap(day => day.posts || []);
+    const bestPost = allPosts.reduce((best, post) => post.earnings > (best?.earnings || 0) ? post : best, null);
+    const totalPosts = allPosts.length;
+    const avgPerPost = totalPosts > 0 ? totalEarnings / totalPosts : 0;
+    const zeroDays = 30 - activeDays;
+    const efficiency = activeDays > 0 ? totalEarnings / activeDays : 0;
+    
+    // Calculate momentum
+    const firstHalf = dailyEarnings.slice(0, 15).reduce((sum, day) => sum + day.value, 0);
+    const secondHalf = dailyEarnings.slice(15).reduce((sum, day) => sum + day.value, 0);
+    const momentum = secondHalf > firstHalf ? "Rising" : secondHalf < firstHalf ? "Falling" : "Stable";
+
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
@@ -561,20 +626,21 @@ class AnalyticsTab {
     document.getElementById("activeDays").textContent = `${activeDays}/30`;
     document.getElementById("growthRate").textContent = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
     document.getElementById("consistency").textContent = `${consistency.toFixed(0)}%`;
-
-    // Calculate earning streak
-    let streak = 0;
-    for (let i = dailyEarnings.length - 1; i >= 0; i--) {
-      if (dailyEarnings[i].value > 0) streak++;
-      else break;
-    }
     document.getElementById("earningStreak").textContent = `${streak} days`;
+    document.getElementById("bestPost").textContent = bestPost ? `$${bestPost.earnings.toFixed(2)}` : "None";
+    document.getElementById("totalPosts").textContent = totalPosts;
+    document.getElementById("avgPerPost").textContent = `$${avgPerPost.toFixed(2)}`;
+    document.getElementById("zeroDays").textContent = zeroDays;
+    document.getElementById("momentum").textContent = momentum;
+    document.getElementById("efficiency").textContent = `$${efficiency.toFixed(2)}`;
 
     // Update colors
     const changeElement = document.getElementById("percentChange");
     const growthElement = document.getElementById("growthRate");
+    const momentumElement = document.getElementById("momentum");
     if (changeElement) changeElement.style.color = percentChange >= 0 ? "#22c55e" : "#ef4444";
     if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
+    if (momentumElement) momentumElement.style.color = momentum === "Rising" ? "#22c55e" : momentum === "Falling" ? "#ef4444" : "#6b7280";
   }
 
   updateChartTitle() {
@@ -645,11 +711,33 @@ class AnalyticsTab {
     }
     document.getElementById("earningStreak").textContent = `${streak} days`;
 
+    // Calculate new metrics
+    const allPosts = dailyEarnings.flatMap(day => day.posts || []);
+    const bestPost = allPosts.reduce((best, post) => post.earnings > (best?.earnings || 0) ? post : best, null);
+    const totalPosts = allPosts.length;
+    const avgPerPost = totalPosts > 0 ? totalEarnings / totalPosts : 0;
+    const zeroDays = dailyEarnings.length - activeDays;
+    const efficiency = activeDays > 0 ? totalEarnings / activeDays : 0;
+    
+    // Calculate momentum
+    const firstHalf = dailyEarnings.slice(0, Math.floor(dailyEarnings.length / 2)).reduce((sum, day) => sum + day.value, 0);
+    const secondHalf = dailyEarnings.slice(Math.floor(dailyEarnings.length / 2)).reduce((sum, day) => sum + day.value, 0);
+    const momentum = secondHalf > firstHalf ? "Rising" : secondHalf < firstHalf ? "Falling" : "Stable";
+
+    document.getElementById("bestPost").textContent = bestPost ? `$${bestPost.earnings.toFixed(2)}` : "None";
+    document.getElementById("totalPosts").textContent = totalPosts;
+    document.getElementById("avgPerPost").textContent = `$${avgPerPost.toFixed(2)}`;
+    document.getElementById("zeroDays").textContent = zeroDays;
+    document.getElementById("momentum").textContent = momentum;
+    document.getElementById("efficiency").textContent = `$${efficiency.toFixed(2)}`;
+
     // Update colors
     const changeElement = document.getElementById("percentChange");
     const growthElement = document.getElementById("growthRate");
+    const momentumElement = document.getElementById("momentum");
     if (changeElement) changeElement.style.color = percentChange >= 0 ? "#22c55e" : "#ef4444";
     if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
+    if (momentumElement) momentumElement.style.color = momentum === "Rising" ? "#22c55e" : momentum === "Falling" ? "#ef4444" : "#6b7280";
   }
 
   updateSummaryStats(posts) {
@@ -730,8 +818,30 @@ class AnalyticsTab {
     }
     document.getElementById("earningStreak").textContent = `${streak} days`;
 
-    // Update color
+    // Calculate new metrics
+    const allPosts = dailyEarnings.flatMap(day => day.posts || []);
+    const bestPost = allPosts.reduce((best, post) => post.earnings > (best?.earnings || 0) ? post : best, null);
+    const totalPosts = allPosts.length;
+    const avgPerPost = totalPosts > 0 ? totalEarnings / totalPosts : 0;
+    const zeroDays = dailyEarnings.length - activeDays;
+    const efficiency = activeDays > 0 ? totalEarnings / activeDays : 0;
+    
+    // Calculate momentum
+    const firstHalf = dailyEarnings.slice(0, Math.floor(dailyEarnings.length / 2)).reduce((sum, day) => sum + day.value, 0);
+    const secondHalf = dailyEarnings.slice(Math.floor(dailyEarnings.length / 2)).reduce((sum, day) => sum + day.value, 0);
+    const momentum = secondHalf > firstHalf ? "Rising" : secondHalf < firstHalf ? "Falling" : "Stable";
+
+    document.getElementById("bestPost").textContent = bestPost ? `$${bestPost.earnings.toFixed(2)}` : "None";
+    document.getElementById("totalPosts").textContent = totalPosts;
+    document.getElementById("avgPerPost").textContent = `$${avgPerPost.toFixed(2)}`;
+    document.getElementById("zeroDays").textContent = zeroDays;
+    document.getElementById("momentum").textContent = momentum;
+    document.getElementById("efficiency").textContent = `$${efficiency.toFixed(2)}`;
+
+    // Update colors
     const growthElement = document.getElementById("growthRate");
+    const momentumElement = document.getElementById("momentum");
     if (growthElement) growthElement.style.color = growthRate >= 0 ? "#22c55e" : "#ef4444";
+    if (momentumElement) momentumElement.style.color = momentum === "Rising" ? "#22c55e" : momentum === "Falling" ? "#ef4444" : "#6b7280";
   }
 }
