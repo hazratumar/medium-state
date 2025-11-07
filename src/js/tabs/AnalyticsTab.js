@@ -41,29 +41,29 @@ class AnalyticsTab {
 
   renderStatCards() {
     const cards = [
-      { id: 'totalEarnings', label: 'Total Earnings', value: '$0.00' },
-      { id: 'expectedEarnings', label: 'Expected Earnings', value: '$0.00' },
-      { id: 'avgDaily', label: 'Avg Daily', value: '$0.00' },
-      { id: 'bestPost', label: 'Best Post', value: 'None' },
-      { id: 'totalPosts', label: 'Total Posts', value: '0' },
-      { id: 'avgPerPost', label: 'Avg Per Post', value: '$0.00' },
-      { id: 'activeDays', label: 'Active Days', value: '0' },
-      { id: 'zeroDays', label: 'Zero Days', value: '0' },
-      { id: 'efficiency', label: 'Efficiency', value: '$0.00' },
-      { id: 'highestDay', label: 'Highest Day', value: '$0.00' },
-      { id: 'lowestDay', label: 'Lowest Day', value: '$0.00' },
-      { id: 'earningStreak', label: 'Streak', value: '0 days' },
-      { id: 'percentChange', label: 'vs Previous', value: '+0%' },
-      { id: 'growthRate', label: 'Growth Rate', value: '0%' },
-      { id: 'momentum', label: 'Momentum', value: 'Stable' },
-      { id: 'consistency', label: 'Consistency', value: '0%' },
-      { id: 'peakDay', label: 'Peak Day', value: 'Mon' }
+      { id: 'totalEarnings', label: 'Total Earnings', value: '$0.00', tooltip: 'Sum of all earnings in the selected period' },
+      { id: 'expectedEarnings', label: 'Expected Earnings', value: '$0.00', tooltip: 'Projected monthly earnings based on current daily average' },
+      { id: 'avgDaily', label: 'Avg Daily', value: '$0.00', tooltip: 'Average earnings per day in the period' },
+      { id: 'bestPost', label: 'Best Post', value: 'None', tooltip: 'Highest earning post in the period' },
+      { id: 'totalPosts', label: 'Total Posts', value: '0', tooltip: 'Number of posts that generated earnings' },
+      { id: 'avgPerPost', label: 'Avg Per Post', value: '$0.00', tooltip: 'Average earnings per post (total ÷ posts)' },
+      { id: 'activeDays', label: 'Active Days', value: '0', tooltip: 'Days with earnings vs total days in period' },
+      { id: 'zeroDays', label: 'Zero Days', value: '0', tooltip: 'Number of days with no earnings' },
+      { id: 'efficiency', label: 'Efficiency', value: '$0.00', tooltip: 'Average earnings per active day' },
+      { id: 'highestDay', label: 'Highest Day', value: '$0.00', tooltip: 'Best single day earnings in the period' },
+      { id: 'lowestDay', label: 'Lowest Day', value: '$0.00', tooltip: 'Lowest single day earnings in the period' },
+      { id: 'earningStreak', label: 'Streak', value: '0 days', tooltip: 'Current consecutive days with earnings' },
+      { id: 'percentChange', label: 'vs Previous', value: '+0%', tooltip: 'Percentage change compared to previous period' },
+      { id: 'growthRate', label: 'Growth Rate', value: '0%', tooltip: 'Growth from first to last day of period' },
+      { id: 'momentum', label: 'Momentum', value: 'Stable', tooltip: 'Trend direction: Rising, Falling, or Stable' },
+      { id: 'consistency', label: 'Consistency', value: '0%', tooltip: 'How consistent daily earnings are (100% = perfectly consistent)' },
+      { id: 'peakDay', label: 'Peak Day', value: 'Mon', tooltip: 'Day of the period with highest earnings' }
     ];
 
     return `
       <div class="stats-summary">
         ${cards.map(card => `
-          <div class="stat-card">
+          <div class="stat-card" title="${card.tooltip}">
             <span class="stat-label">${card.label}</span>
             <span id="${card.id}" class="stat-value">${card.value}</span>
           </div>
@@ -95,6 +95,56 @@ class AnalyticsTab {
     ["startDate", "endDate"].forEach(id => {
       document.getElementById(id)?.addEventListener("change", () => this.loadData());
     });
+
+    this.initTooltips();
+  }
+
+  initTooltips() {
+    document.querySelectorAll('.stat-card').forEach(card => {
+      card.addEventListener('mouseenter', (e) => {
+        const tooltip = e.currentTarget.getAttribute('title');
+        if (tooltip) {
+          this.showTooltip(e.currentTarget, tooltip);
+        }
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        this.hideTooltip();
+      });
+    });
+  }
+
+  showTooltip(element, text) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'stat-tooltip';
+    tooltip.textContent = text;
+    tooltip.style.cssText = `
+      position: absolute;
+      background: #333;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      max-width: 200px;
+      z-index: 1000;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+    tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+    
+    this.currentTooltip = tooltip;
+  }
+
+  hideTooltip() {
+    if (this.currentTooltip) {
+      this.currentTooltip.remove();
+      this.currentTooltip = null;
+    }
   }
 
   initCharts() {
