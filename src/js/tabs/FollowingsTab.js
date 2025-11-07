@@ -43,6 +43,7 @@ class FollowingsTab {
       this.followingData = followingUsers;
       followingsTable.innerHTML = this.renderFollowingList(followingUsers);
       this.setupUnfollowButtons();
+      this.initTooltips();
     } catch (error) {
       this.showErrorState(followingsTable, "Error loading following list");
     }
@@ -173,7 +174,7 @@ class FollowingsTab {
 
     return `
       <div class="following-summary">
-        <div class="stat-card">
+        <div class="stat-card" data-tooltip="Total number of users you are currently following">
           <div class="stat-value">${this.followingData.length}</div>
           <div class="stat-label">Following</div>
         </div>
@@ -522,5 +523,68 @@ class FollowingsTab {
         }
       }, 100);
     });
+  }
+
+  initTooltips() {
+    document.querySelectorAll('.stat-card').forEach(card => {
+      card.addEventListener('mouseenter', (e) => {
+        const tooltip = e.currentTarget.getAttribute('data-tooltip');
+        if (tooltip) {
+          this.showTooltip(e.currentTarget, tooltip);
+        }
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        this.hideTooltip();
+      });
+    });
+  }
+
+  showTooltip(element, text) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'stat-tooltip';
+    tooltip.textContent = text;
+    tooltip.style.cssText = `
+      position: fixed;
+      background: #1f2937;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      max-width: 220px;
+      z-index: 10000;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255,255,255,0.1);
+      line-height: 1.4;
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = element.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.top - tooltipRect.height - 8;
+    
+    if (left < 8) left = 8;
+    if (left + tooltipRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - tooltipRect.width - 8;
+    }
+    if (top < 8) {
+      top = rect.bottom + 8;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    
+    this.currentTooltip = tooltip;
+  }
+
+  hideTooltip() {
+    if (this.currentTooltip) {
+      this.currentTooltip.remove();
+      this.currentTooltip = null;
+    }
   }
 }

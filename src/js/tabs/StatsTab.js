@@ -122,23 +122,23 @@ class StatsTab {
 
     return `
       <div class="report-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
-        <div style="text-align: center;">
+        <div class="stat-card" data-tooltip="Total views across all ${totalStories} published articles" style="text-align: center;">
           <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Views</div>
           <div style="color: #111827; font-size: 15px; font-weight: 700;">${this.extension.formatNumber(totalViews)}</div>
         </div>
-        <div style="text-align: center;">
+        <div class="stat-card" data-tooltip="Total reads across all articles (people who read beyond the preview)" style="text-align: center;">
           <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Reads</div>
           <div style="color: #111827; font-size: 15px; font-weight: 700;">${this.extension.formatNumber(totalReads)}</div>
         </div>
-        <div style="text-align: center;">
+        <div class="stat-card" data-tooltip="Read rate: percentage of viewers who read the full article (${totalReads} reads ÷ ${totalViews} views)" style="text-align: center;">
           <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Rate</div>
           <div style="color: #111827; font-size: 15px; font-weight: 700;">${readRate}%</div>
         </div>
-        <div style="text-align: center;">
+        <div class="stat-card" data-tooltip="Total earnings from Medium Partner Program across all articles" style="text-align: center;">
           <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Earnings</div>
           <div style="color: #111827; font-size: 15px; font-weight: 700;">$${totalEarnings.toFixed(2)}</div>
         </div>
-        <div style="text-align: center;">
+        <div class="stat-card" data-tooltip="Average monthly earnings based on ${monthsActive} months of activity ($${totalEarnings.toFixed(2)} ÷ ${monthsActive} months)" style="text-align: center;">
           <div style="color: #9ca3af; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Monthly</div>
           <div style="color: #111827; font-size: 15px; font-weight: 700;">$${avgMonthlyEarnings.toFixed(2)}</div>
         </div>
@@ -267,6 +267,8 @@ class StatsTab {
 
     // attach copy handlers for the new column
     this.attachCopyHandlers();
+    // initialize tooltips for stat cards
+    this.initTooltips();
   }
 
   attachCopyHandlers() {
@@ -525,5 +527,68 @@ class StatsTab {
 
     // re-attach copy handlers after updating rows
     this.attachCopyHandlers();
+  }
+
+  initTooltips() {
+    document.querySelectorAll('.stat-card').forEach(card => {
+      card.addEventListener('mouseenter', (e) => {
+        const tooltip = e.currentTarget.getAttribute('data-tooltip');
+        if (tooltip) {
+          this.showTooltip(e.currentTarget, tooltip);
+        }
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        this.hideTooltip();
+      });
+    });
+  }
+
+  showTooltip(element, text) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'stat-tooltip';
+    tooltip.textContent = text;
+    tooltip.style.cssText = `
+      position: fixed;
+      background: #1f2937;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      max-width: 220px;
+      z-index: 10000;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255,255,255,0.1);
+      line-height: 1.4;
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = element.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.top - tooltipRect.height - 8;
+    
+    if (left < 8) left = 8;
+    if (left + tooltipRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - tooltipRect.width - 8;
+    }
+    if (top < 8) {
+      top = rect.bottom + 8;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    
+    this.currentTooltip = tooltip;
+  }
+
+  hideTooltip() {
+    if (this.currentTooltip) {
+      this.currentTooltip.remove();
+      this.currentTooltip = null;
+    }
   }
 }

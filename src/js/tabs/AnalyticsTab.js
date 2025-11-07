@@ -63,7 +63,7 @@ class AnalyticsTab {
     return `
       <div class="stats-summary">
         ${cards.map(card => `
-          <div class="stat-card" title="${card.tooltip}">
+          <div class="stat-card" data-tooltip="${card.tooltip}">
             <span class="stat-label">${card.label}</span>
             <span id="${card.id}" class="stat-value">${card.value}</span>
           </div>
@@ -102,7 +102,7 @@ class AnalyticsTab {
   initTooltips() {
     document.querySelectorAll('.stat-card').forEach(card => {
       card.addEventListener('mouseenter', (e) => {
-        const tooltip = e.currentTarget.getAttribute('title');
+        const tooltip = e.currentTarget.getAttribute('data-tooltip');
         if (tooltip) {
           this.showTooltip(e.currentTarget, tooltip);
         }
@@ -119,23 +119,38 @@ class AnalyticsTab {
     tooltip.className = 'stat-tooltip';
     tooltip.textContent = text;
     tooltip.style.cssText = `
-      position: absolute;
-      background: #333;
+      position: fixed;
+      background: #1f2937;
       color: white;
       padding: 8px 12px;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 12px;
-      max-width: 200px;
-      z-index: 1000;
+      max-width: 220px;
+      z-index: 10000;
       pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255,255,255,0.1);
+      line-height: 1.4;
     `;
     
     document.body.appendChild(tooltip);
     
     const rect = element.getBoundingClientRect();
-    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-    tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.top - tooltipRect.height - 8;
+    
+    if (left < 8) left = 8;
+    if (left + tooltipRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - tooltipRect.width - 8;
+    }
+    if (top < 8) {
+      top = rect.bottom + 8;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
     
     this.currentTooltip = tooltip;
   }
