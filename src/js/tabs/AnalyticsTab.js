@@ -36,6 +36,10 @@ class AnalyticsTab {
         </div>
         <div class="stats-summary">
           <div class="stat-card">
+            <span class="stat-label">Expected Earnings</span>
+            <span id="expectedEarnings" class="stat-value">$0.00</span>
+          </div>
+          <div class="stat-card">
             <span class="stat-label">Total Earnings</span>
             <span id="totalEarnings" class="stat-value">$0.00</span>
           </div>
@@ -590,8 +594,20 @@ class AnalyticsTab {
     document.getElementById("chartTitle").textContent = title;
   }
 
+  calculateExpectedEarnings(dailyEarnings) {
+    if (dailyEarnings.length === 0) return 0;
+    
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const daysPassed = dailyEarnings.length;
+    const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
+    
+    return (totalEarnings / daysPassed) * daysInMonth;
+  }
+
   updateThisMonthSummaryStats(dailyEarnings) {
     const totalEarnings = dailyEarnings.reduce((sum, day) => sum + day.value, 0);
+    const expectedEarnings = this.calculateExpectedEarnings(dailyEarnings);
     const maxEarnings = Math.max(...dailyEarnings.map((day) => day.value));
     const minEarnings = Math.min(...dailyEarnings.map((day) => day.value));
     const avgEarnings = totalEarnings / dailyEarnings.length;
@@ -611,6 +627,7 @@ class AnalyticsTab {
     const variance = dailyEarnings.reduce((sum, day) => sum + Math.pow(day.value - avgEarnings, 2), 0) / dailyEarnings.length;
     const consistency = avgEarnings > 0 ? Math.max(0, 100 - (Math.sqrt(variance) / avgEarnings) * 100) : 0;
 
+    document.getElementById("expectedEarnings").textContent = `$${expectedEarnings.toFixed(2)}`;
     document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
     document.getElementById("avgDaily").textContent = `$${avgEarnings.toFixed(2)}`;
     document.getElementById("highestDay").textContent = `$${maxEarnings.toFixed(2)}`;
