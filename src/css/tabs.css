@@ -354,6 +354,8 @@ tr.removing-row {
 
 .chart-container {
   position: relative;
+  width: 100%;
+  min-height: 300px;
 }
 
 .chart-loader {
@@ -371,6 +373,49 @@ tr.removing-row {
 .chart-section canvas {
   border-radius: 8px;
   background: #ffffff;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  display: block;
+}
+
+#earningsChart {
+  cursor: crosshair;
+  transition: all 0.2s ease;
+}
+
+#earningsChart:hover {
+  filter: brightness(1.02);
+}
+
+.analytics-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.time-period-select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  color: #374151;
+  min-width: 120px;
+}
+
+#customDateRange {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#customDateRange input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
 }
 
 .stats-summary {

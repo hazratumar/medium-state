@@ -163,9 +163,13 @@ class AnalyticsTab {
   }
 
   initCharts() {
-    this.earningsChart = new BarChart("earningsChart", {
-      barColor: "#667eea",
-      padding: 40,
+    this.earningsChart = new LineChart("earningsChart", {
+      primaryGradient: ["#14b8a6", "#8b5cf6"],
+      averageLineColor: "#f59e0b",
+      markerColors: { high: "#10b981", low: "#ef4444" },
+      gridColor: "#f1f5f9",
+      textColor: "#64748b",
+      padding: 60,
     });
   }
 
@@ -289,7 +293,6 @@ class AnalyticsTab {
   renderResults(dailyEarnings) {
     this.setLoadingState(false);
     this.updateChartTitle();
-    this.updateCanvasWidth();
     this.earningsChart.render(dailyEarnings);
     this.showStatus("Analytics loaded successfully", "success");
   }
@@ -432,13 +435,7 @@ class AnalyticsTab {
     return "Daily Earnings - Custom Range";
   }
 
-  updateCanvasWidth() {
-    const timePeriod = document.getElementById("timePeriod")?.value || "thisMonth";
-    const canvas = document.getElementById("earningsChart");
-    if (canvas) {
-      canvas.width = ["month", "thisMonth"].includes(timePeriod) ? 1200 : 600;
-    }
-  }
+
 
   setLoadingState(loading) {
     this.isLoading = loading;
